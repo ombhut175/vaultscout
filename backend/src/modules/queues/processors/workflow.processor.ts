@@ -9,7 +9,11 @@ export interface WorkflowJobData {
   step?: number;
 }
 
-@Processor("workflow", { concurrency: 2 })
+@Processor("workflow", {
+  concurrency: 2,
+  stalledInterval: 5000,
+  maxStalledCount: 2,
+})
 export class WorkflowProcessor extends WorkerHost {
   private readonly logger = new Logger(WorkflowProcessor.name);
 
@@ -47,6 +51,11 @@ export class WorkflowProcessor extends WorkerHost {
   @OnWorkerEvent("stalled")
   onStalled(jobId: string) {
     this.logger.warn(`Workflow job ${jobId} stalled`);
+  }
+
+  @OnWorkerEvent("error")
+  onError(err: Error) {
+    this.logger.error(`Worker error: ${err.message}`, err.stack);
   }
 
   private async executeWorkflow(

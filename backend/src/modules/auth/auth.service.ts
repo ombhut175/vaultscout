@@ -45,32 +45,21 @@ export class AuthService {
         throw new UnauthorizedException(error.message);
       }
 
-      // Check if user exists in public.users table and verify status
+      // Check if user exists in public.users table
       let publicUser = null;
       if (data.user) {
         try {
-          publicUser = await this.usersRepository.findById(data.user.id);
+          publicUser = await this.usersRepository.findByExternalUserId(
+            data.user.id,
+          );
 
           if (!publicUser) {
-            // Create public user record if it doesn't exist (for existing Supabase users)
+            // Create public user record if it doesn't exist
             publicUser = await this.usersRepository.create({
-              id: data.user.id, // Use Supabase user ID as the UUID id
+              externalUserId: data.user.id,
               email: loginDto.email,
-              isEmailVerified: !!data.user.email_confirmed_at,
             });
-            this.logger.log(
-              `Created missing public user record for ${loginDto.email}`,
-            );
-          } else {
-            // Update verification status based on Supabase auth status
-            if (data.user.email_confirmed_at && !publicUser.isEmailVerified) {
-              publicUser = await this.usersRepository.update(publicUser.id, {
-                isEmailVerified: true,
-              });
-              this.logger.log(
-                `Updated email verification status for ${loginDto.email}`,
-              );
-            }
+            this.logger.log(`Created public user record for ${loginDto.email}`);
           }
         } catch (dbError) {
           const errorMessage =
@@ -88,7 +77,6 @@ export class AuthService {
         user: data.user,
         session: data.session,
         publicUser,
-        isEmailVerified: publicUser?.isEmailVerified || false,
       };
     } catch (error) {
       if (
@@ -142,9 +130,8 @@ export class AuthService {
       if (data.user) {
         try {
           publicUser = await this.usersRepository.create({
-            id: data.user.id, // Use Supabase user ID as the UUID id
+            externalUserId: data.user.id,
             email: signupDto.email,
-            isEmailVerified: false, // Set as false initially
           });
           this.logger.log(`Public user record created for ${signupDto.email}`);
         } catch (dbError) {

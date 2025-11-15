@@ -5,5 +5,6 @@ import { HuggingfaceController } from "./huggingface.controller";
 @Module({
   controllers: [HuggingfaceController],
   providers: [HuggingfaceService],
+  exports: [HuggingfaceService],
 })
 export class HuggingfaceModule {}

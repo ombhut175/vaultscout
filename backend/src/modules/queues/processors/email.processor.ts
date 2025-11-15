@@ -9,7 +9,11 @@ export interface EmailJobData {
   retries?: number;
 }
 
-@Processor("email", { concurrency: 5 })
+@Processor("email", {
+  concurrency: 5,
+  stalledInterval: 5000,
+  maxStalledCount: 2,
+})
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
 
@@ -42,6 +46,11 @@ export class EmailProcessor extends WorkerHost {
   @OnWorkerEvent("stalled")
   onStalled(jobId: string) {
     this.logger.warn(`Email job ${jobId} stalled`);
+  }
+
+  @OnWorkerEvent("error")
+  onError(err: Error) {
+    this.logger.error(`Worker error: ${err.message}`, err.stack);
   }
 
   private async sendEmail(data: EmailJobData): Promise<void> {

@@ -9,16 +9,12 @@ import {
 } from "@nestjs/swagger";
 import { HuggingfaceService } from "./huggingface.service";
 import { successResponse } from "../../common/helpers/api-response.helper";
-import { IsString, IsNotEmpty, IsOptional } from "class-validator";
+import { IsString, IsNotEmpty } from "class-validator";
 
 class FeatureExtractionDto {
   @IsString()
   @IsNotEmpty()
   text!: string;
-
-  @IsOptional()
-  @IsString()
-  model?: string;
 }
 
 @ApiTags("huggingface")
@@ -41,16 +37,15 @@ export class HuggingfaceController {
     type: FeatureExtractionDto,
     examples: {
       example1: {
-        summary: "Basic feature extraction",
+        summary: "Extract text embeddings",
         value: {
           text: "Today is a sunny day and I will get some ice cream.",
         },
       },
       example2: {
-        summary: "Feature extraction with custom model",
+        summary: "Extract long text",
         value: {
           text: "The quick brown fox jumps over the lazy dog",
-          model: "sentence-transformers/all-MiniLM-L6-v2",
         },
       },
     },
@@ -170,14 +165,12 @@ export class HuggingfaceController {
     this.logger.log("Feature extraction request received", {
       operation: "extractFeatures",
       textLength: dto.text.length,
-      model: dto.model || "default",
       timestamp: new Date().toISOString(),
     });
 
     try {
       const result = await this.huggingfaceService.extractFeatures({
         text: dto.text,
-        model: dto.model,
       });
 
       this.logger.log("Feature extraction endpoint completed successfully", {

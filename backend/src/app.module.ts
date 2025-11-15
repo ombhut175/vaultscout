@@ -13,6 +13,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { HealthCheckModule } from "./modules/health-check/health-check.module";
 import { QueuesModule } from "./modules/queues/queues.module";
 import { HuggingfaceModule } from "./modules/huggingface/huggingface.module";
+import { PineconeModule } from "./modules/pinecone/pinecone.module";
 import { envValidationSchema } from "./config/env.validation";
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
@@ -33,6 +34,10 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
         maxRetriesPerRequest: null,
         enableReadyCheck: false,
         enableOfflineQueue: false,
+        connectTimeout: 10000,
+        keepAlive: 30000,
+        family: 4,
+        retryStrategy: (times) => Math.min(times * 50, 2000),
       },
     }),
     BullBoardModule.forRoot({
@@ -47,6 +52,7 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
     HealthCheckModule,
     QueuesModule,
     HuggingfaceModule,
+    PineconeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

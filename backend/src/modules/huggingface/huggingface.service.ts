@@ -2,7 +2,6 @@ import { Injectable, Logger } from "@nestjs/common";
 import { InferenceClient } from "@huggingface/inference";
 import { ENV } from "../../common/constants/string-const";
 import {
-  normalizeEmbedding,
   getEmbeddingMetadata,
   validateEmbeddingDimensions,
   EmbeddingMetadata,
@@ -10,7 +9,6 @@ import {
 
 interface FeatureExtractionInput {
   text: string;
-  model?: string;
 }
 
 interface FeatureExtractionResponse {
@@ -59,7 +57,7 @@ export class HuggingfaceService {
   async extractFeatures(
     input: FeatureExtractionInput,
   ): Promise<FeatureExtractionResponse> {
-    const model = input.model || this.defaultModel;
+    const model = this.defaultModel;
 
     this.logger.log("Starting feature extraction", {
       operation: "extractFeatures",
@@ -74,6 +72,7 @@ export class HuggingfaceService {
         model,
         inputs: input.text,
         provider: "hf-inference",
+        normalize: this.shouldNormalize,
       });
 
       let embedding: number[] = [];
@@ -94,32 +93,19 @@ export class HuggingfaceService {
         throw new Error(errorMsg);
       }
 
-      let processedEmbedding = embedding;
-      let normalized = false;
-
-      if (this.shouldNormalize) {
-        const { normalized: normVec } = normalizeEmbedding(embedding);
-        processedEmbedding = normVec;
-        normalized = true;
-        this.logger.debug("Embedding normalized for cosine similarity", {
-          operation: "extractFeatures",
-          dimensions: embedding.length,
-        });
-      }
-
-      const metadata = getEmbeddingMetadata(processedEmbedding, normalized);
+      const metadata = getEmbeddingMetadata(embedding, this.shouldNormalize);
 
       this.logger.log("Feature extraction completed successfully", {
         operation: "extractFeatures",
         model,
         dimensions: metadata.dimensions,
         magnitude: metadata.magnitude.toFixed(6),
-        normalized,
+        normalized: this.shouldNormalize,
         timestamp: new Date().toISOString(),
       });
 
       return {
-        embeddings: processedEmbedding,
+        embeddings: embedding,
         model,
         inputText: input.text,
         embeddingMetadata: metadata,

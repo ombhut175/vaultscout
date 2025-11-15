@@ -175,20 +175,17 @@ export class AuthController {
           id: result.user?.id || "",
           email: result.user?.email || "",
           email_confirmed_at: result.user?.email_confirmed_at || null,
-          isEmailVerified: result.isEmailVerified || false,
           created_at: result.user?.created_at || "",
           updated_at: result.user?.updated_at || "",
         },
         publicUser: result.publicUser
           ? {
               id: result.publicUser.id,
+              externalUserId: result.publicUser.externalUserId,
               email: result.publicUser.email,
-              isEmailVerified: result.publicUser.isEmailVerified,
               createdAt: result.publicUser.createdAt.toISOString(),
-              updatedAt: result.publicUser.updatedAt.toISOString(),
             }
           : null,
-        isEmailVerified: result.isEmailVerified || false,
       };
 
       return successResponse(responseData, "Login successful");
@@ -277,17 +274,15 @@ export class AuthController {
           id: result.user?.id || "",
           email: result.user?.email || "",
           email_confirmed_at: result.user?.email_confirmed_at || null,
-          isEmailVerified: false, // Always false on signup
           created_at: result.user?.created_at || "",
           updated_at: result.user?.updated_at || "",
         },
         publicUser: result.publicUser
           ? {
               id: result.publicUser.id,
+              externalUserId: result.publicUser.externalUserId,
               email: result.publicUser.email,
-              isEmailVerified: result.publicUser.isEmailVerified,
               createdAt: result.publicUser.createdAt.toISOString(),
-              updatedAt: result.publicUser.updatedAt.toISOString(),
             }
           : null,
         message: "Please check your email for confirmation instructions",

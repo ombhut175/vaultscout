@@ -25,8 +25,14 @@ export enum ENV {
 
   // Hugging Face Configuration
   HF_API_TOKEN = "HF_API_TOKEN",
+  HF_EMBEDDING_URL = "HF_EMBEDDING_URL",
+  HF_EMBEDDING_MODEL = "HF_EMBEDDING_MODEL",
   EMBEDDING_DIMENSIONS = "EMBEDDING_DIMENSIONS",
   BGE_NORMALIZE = "BGE_NORMALIZE",
+
+  // Pinecone Configuration
+  PINECONE_API_KEY = "PINECONE_API_KEY",
+  PINECONE_INDEX_NAME = "PINECONE_INDEX_NAME",
 }
 
 // Common Messages
@@ -60,6 +66,14 @@ export enum MESSAGES {
   // Supabase
   SUPABASE_CONNECTION_ERROR = "Failed to connect to database",
   SUPABASE_QUERY_ERROR = "Database query failed",
+
+  // Pinecone
+  PINECONE_UPSERT_SUCCESS = "Vectors upserted successfully",
+  PINECONE_FETCH_SUCCESS = "Vectors fetched successfully",
+  PINECONE_DELETE_SUCCESS = "Vectors deleted successfully",
+  PINECONE_SEARCH_SUCCESS = "Search completed successfully",
+  PINECONE_CONNECTION_ERROR = "Failed to connect to Pinecone",
+  PINECONE_OPERATION_ERROR = "Pinecone operation failed",
 }
 
 // API Response Messages

@@ -1,11 +1,44 @@
 import { healthChecking } from "./health-checking";
 import { users } from "./users";
+import { organizations } from "./organizations";
+import { groups } from "./groups";
+import { userGroups } from "./user-groups";
+import { documents } from "./documents";
+import { documentVersions } from "./document-versions";
+import { files } from "./files";
+import { chunks } from "./chunks";
+import { embeddings } from "./embeddings";
+import { ingestJobs } from "./ingest-jobs";
+import { searchLogs } from "./search-logs";
 
 // Schema exports
 export const schema = {
   healthChecking,
   users,
+  organizations,
+  groups,
+  userGroups,
+  documents,
+  documentVersions,
+  files,
+  chunks,
+  embeddings,
+  ingestJobs,
+  searchLogs,
 };
 
 // Export individual tables for convenience
-export { healthChecking, users };
+export {
+  healthChecking,
+  users,
+  organizations,
+  groups,
+  userGroups,
+  documents,
+  documentVersions,
+  files,
+  chunks,
+  embeddings,
+  ingestJobs,
+  searchLogs,
+};
