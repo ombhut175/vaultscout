@@ -11,6 +11,7 @@ import {
   ChunksRepository,
   FilesRepository,
   EmbeddingsRepository,
+  DocumentAclGroupsRepository,
 } from "../../../core/database/repositories";
 import {
   MESSAGES,
@@ -57,6 +58,7 @@ export class DocumentProcessingService {
     private readonly chunksRepo: ChunksRepository,
     private readonly filesRepo: FilesRepository,
     private readonly embeddingsRepo: EmbeddingsRepository,
+    private readonly documentAclGroupsRepo: DocumentAclGroupsRepository,
     private readonly documentQueueService: DocumentQueueService,
   ) {
     this.embeddingModel =
@@ -96,11 +98,17 @@ export class DocumentProcessingService {
         fileType: "pending",
         tags: uploadDto.tags || [],
         status: "processing",
-        aclGroups: uploadDto.aclGroups || [],
         contentHash,
       });
 
       documentId = document.id;
+
+      if (uploadDto.aclGroups && uploadDto.aclGroups.length > 0) {
+        await this.documentAclGroupsRepo.addGroupsToDocument(
+          document.id,
+          uploadDto.aclGroups,
+        );
+      }
 
       this.logger.log("Document record created", {
         documentId: document.id,
@@ -355,9 +363,15 @@ export class DocumentProcessingService {
       fileType: "pending",
       tags: uploadDto.tags || [],
       status: "queued",
-      aclGroups: uploadDto.aclGroups || [],
       contentHash,
     });
+
+    if (uploadDto.aclGroups && uploadDto.aclGroups.length > 0) {
+      await this.documentAclGroupsRepo.addGroupsToDocument(
+        document.id,
+        uploadDto.aclGroups,
+      );
+    }
 
     this.logger.log("Document record created for queuing", {
       documentId: document.id,

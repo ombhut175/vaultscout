@@ -20,7 +20,6 @@ export const documents = pgTable(
     fileType: text("file_type").notNull(),
     tags: text("tags").array().default([]).notNull(),
     status: text("status").default("queued").notNull(),
-    aclGroups: uuid("acl_groups").array().default([]).notNull(),
     contentHash: text("content_hash").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -31,6 +30,5 @@ export const documents = pgTable(
       table.status,
     ),
     tagsIdx: index("documents_tags_idx").on(table.tags),
-    aclGroupsIdx: index("documents_acl_groups_idx").on(table.aclGroups),
   }),
 );

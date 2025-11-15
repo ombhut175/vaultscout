@@ -5,6 +5,7 @@ export * from "./base.repository";
 export * from "./users.repository";
 export * from "./health-checking.repository";
 export * from "./documents.repository";
+export * from "./document-acl-groups.repository";
 export * from "./document-versions.repository";
 export * from "./chunks.repository";
 export * from "./files.repository";
