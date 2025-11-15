@@ -33,6 +33,7 @@
   "dependencies": {
     "@bull-board/express": "^5.20.6",
     "@bull-board/nestjs": "^5.20.6",
+    "@huggingface/inference": "^4.13.3",
     "@nestjs/bullmq": "^10.1.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/common": "^11.0.0",

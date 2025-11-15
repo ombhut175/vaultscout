@@ -44,6 +44,9 @@ export const envValidationSchema = Joi.object({
     .uri()
     .optional()
     .default("http://localhost:3000/login"),
+
+  // Hugging Face Configuration (Optional)
+  [ENV.HF_API_TOKEN]: Joi.string().optional(),
 }).custom((value, helpers) => {
   // Ensure either DATABASE_URL or all individual database parameters are provided
   const hasDatabaseUrl = value[ENV.DATABASE_URL];
