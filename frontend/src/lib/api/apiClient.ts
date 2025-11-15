@@ -12,7 +12,7 @@ if (!API_URL && typeof window === 'undefined') {
   // Only warn on server-side during development
   console.warn(
     '⚠️  NEXT_PUBLIC_API_URL is not set. Please add it to your .env.local file.\n' +
-    'Example: NEXT_PUBLIC_API_URL=http://localhost:6932'
+    'Example: NEXT_PUBLIC_API_URL=http://localhost:6523'
   );
 }
 
@@ -24,7 +24,7 @@ function createBaseURL(): string {
   if (!API_URL) {
     throw new Error(
       'NEXT_PUBLIC_API_URL environment variable is required.\n' +
-      'Please create a .env.local file with: NEXT_PUBLIC_API_URL=http://localhost:6932'
+      'Please create a .env.local file with: NEXT_PUBLIC_API_URL=http://localhost:6523'
     );
   }
   
