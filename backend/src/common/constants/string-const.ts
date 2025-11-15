@@ -74,6 +74,19 @@ export enum MESSAGES {
   PINECONE_SEARCH_SUCCESS = "Search completed successfully",
   PINECONE_CONNECTION_ERROR = "Failed to connect to Pinecone",
   PINECONE_OPERATION_ERROR = "Pinecone operation failed",
+
+  // Document Processing
+  DOCUMENT_UPLOAD_SUCCESS = "Document uploaded successfully",
+  DOCUMENT_PROCESSING_STARTED = "Document processing started",
+  DOCUMENT_PROCESSING_COMPLETE = "Document processed successfully",
+  DOCUMENT_PROCESSING_FAILED = "Document processing failed",
+  DOCUMENT_NOT_FOUND = "Document not found",
+  INVALID_FILE_TYPE = "Invalid file type",
+  FILE_TOO_LARGE = "File size exceeds limit",
+  STORAGE_UPLOAD_ERROR = "Failed to upload file to storage",
+  TEXT_EXTRACTION_ERROR = "Failed to extract text from document",
+  CHUNKING_ERROR = "Failed to chunk document text",
+  EMBEDDING_ERROR = "Failed to generate embeddings",
 }
 
 // API Response Messages
@@ -101,4 +114,13 @@ export enum QUEUES {
 // Cookie Keys
 export enum COOKIES {
   AUTH_TOKEN = "auth_token",
+}
+
+// Supabase Storage Buckets
+export enum SUPABASE_BUCKETS {
+  RAW = "vs-raw-private",
+  EXTRACTED = "vs-extracted-private",
+  PREVIEWS = "vs-previews-public",
+  EXPORTS = "vs-exports-private",
+  TEMP = "vs-temp-private",
 }

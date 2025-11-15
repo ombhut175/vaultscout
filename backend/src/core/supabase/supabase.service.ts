@@ -40,6 +40,11 @@ export class SupabaseService implements OnModuleInit {
     if (!supabaseConfig.url || !supabaseConfig.serviceRoleKey) {
       throw new Error("Missing Supabase service role configuration");
     }
-    return createClient(supabaseConfig.url, supabaseConfig.serviceRoleKey);
+    return createClient(supabaseConfig.url, supabaseConfig.serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
   }
 }

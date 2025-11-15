@@ -1,1 +1,1 @@
-# vaultscout
+# full_stack_template

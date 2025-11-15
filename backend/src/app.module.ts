@@ -14,6 +14,7 @@ import { HealthCheckModule } from "./modules/health-check/health-check.module";
 import { QueuesModule } from "./modules/queues/queues.module";
 import { HuggingfaceModule } from "./modules/huggingface/huggingface.module";
 import { PineconeModule } from "./modules/pinecone/pinecone.module";
+import { DocumentsModule } from "./modules/documents/documents.module";
 import { envValidationSchema } from "./config/env.validation";
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
@@ -53,6 +54,7 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
     QueuesModule,
     HuggingfaceModule,
     PineconeModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

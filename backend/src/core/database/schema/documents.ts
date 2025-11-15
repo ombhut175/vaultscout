@@ -4,7 +4,6 @@ import {
   uuid,
   timestamp,
   index,
-  unique,
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organizations";
 import { users } from "./users";
@@ -33,6 +32,5 @@ export const documents = pgTable(
     ),
     tagsIdx: index("documents_tags_idx").on(table.tags),
     aclGroupsIdx: index("documents_acl_groups_idx").on(table.aclGroups),
-    uniqueOrgContent: unique().on(table.orgId, table.contentHash),
   }),
 );
