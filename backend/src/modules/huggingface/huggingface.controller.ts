@@ -72,26 +72,11 @@ export class HuggingfaceController {
           properties: {
             embeddings: {
               type: "array",
-              description: "Feature vectors/embeddings from the model",
-              items: {
-                oneOf: [
-                  { type: "number" },
-                  {
-                    type: "array",
-                    items: { type: "number" },
-                  },
-                  {
-                    type: "array",
-                    items: {
-                      type: "array",
-                      items: { type: "number" },
-                    },
-                  },
-                ],
-              },
+              description:
+                "Feature vector (embedding) from the model - 1D array of floats",
+              items: { type: "number" },
               example: [
-                [0.123, -0.456, 0.789, 0.321],
-                [-0.111, 0.222, -0.333, 0.444],
+                0.123, -0.456, 0.789, 0.321, 0.101, -0.202, 0.303, -0.404,
               ],
             },
             model: {
@@ -104,6 +89,30 @@ export class HuggingfaceController {
               description: "The original input text that was processed",
               example: "Today is a sunny day and I will get some ice cream.",
             },
+            embeddingMetadata: {
+              type: "object",
+              description: "Metadata about the embedding vector",
+              properties: {
+                dimensions: {
+                  type: "number",
+                  description: "Number of dimensions in the embedding vector",
+                  example: 768,
+                },
+                magnitude: {
+                  type: "number",
+                  description:
+                    "L2 norm (magnitude) of the embedding vector before normalization",
+                  example: 1.0,
+                },
+                normalized: {
+                  type: "boolean",
+                  description:
+                    "Whether the embedding was normalized using L2 normalization",
+                  example: true,
+                },
+              },
+              required: ["dimensions", "magnitude", "normalized"],
+            },
             timestamp: {
               type: "string",
               format: "date-time",
@@ -111,7 +120,13 @@ export class HuggingfaceController {
               example: "2024-01-01T12:34:56.789Z",
             },
           },
-          required: ["embeddings", "model", "inputText", "timestamp"],
+          required: [
+            "embeddings",
+            "model",
+            "inputText",
+            "embeddingMetadata",
+            "timestamp",
+          ],
         },
       },
     },

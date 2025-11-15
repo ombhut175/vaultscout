@@ -25,6 +25,8 @@ export enum ENV {
 
   // Hugging Face Configuration
   HF_API_TOKEN = "HF_API_TOKEN",
+  EMBEDDING_DIMENSIONS = "EMBEDDING_DIMENSIONS",
+  BGE_NORMALIZE = "BGE_NORMALIZE",
 }
 
 // Common Messages

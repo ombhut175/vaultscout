@@ -47,6 +47,8 @@ export const envValidationSchema = Joi.object({
 
   // Hugging Face Configuration (Optional)
   [ENV.HF_API_TOKEN]: Joi.string().optional(),
+  [ENV.EMBEDDING_DIMENSIONS]: Joi.number().positive().optional(),
+  [ENV.BGE_NORMALIZE]: Joi.boolean().optional().default(true),
 }).custom((value, helpers) => {
   // Ensure either DATABASE_URL or all individual database parameters are provided
   const hasDatabaseUrl = value[ENV.DATABASE_URL];

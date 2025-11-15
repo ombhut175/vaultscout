@@ -1,9 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
-import {
-  InferenceClient,
-  FeatureExtractionOutput,
-} from "@huggingface/inference";
+import { InferenceClient } from "@huggingface/inference";
 import { ENV } from "../../common/constants/string-const";
+import {
+  normalizeEmbedding,
+  getEmbeddingMetadata,
+  validateEmbeddingDimensions,
+  EmbeddingMetadata,
+} from "../../common/helpers/embedding.helper";
 
 interface FeatureExtractionInput {
   text: string;
@@ -11,9 +14,10 @@ interface FeatureExtractionInput {
 }
 
 interface FeatureExtractionResponse {
-  embeddings: FeatureExtractionOutput;
+  embeddings: number[];
   model: string;
   inputText: string;
+  embeddingMetadata: EmbeddingMetadata;
   timestamp: string;
 }
 
@@ -22,6 +26,8 @@ export class HuggingfaceService {
   private readonly logger = new Logger(HuggingfaceService.name);
   private client: InferenceClient;
   private readonly defaultModel = "BAAI/bge-base-en-v1.5";
+  private readonly shouldNormalize: boolean;
+  private readonly expectedDimensions?: number;
 
   constructor() {
     const hfToken = process.env[ENV.HF_API_TOKEN];
@@ -33,6 +39,21 @@ export class HuggingfaceService {
     }
 
     this.client = new InferenceClient(hfToken);
+
+    const bgeNormalizeEnv = process.env[ENV.BGE_NORMALIZE];
+    this.shouldNormalize =
+      bgeNormalizeEnv === undefined || bgeNormalizeEnv === "true";
+
+    const dimensionsEnv = process.env[ENV.EMBEDDING_DIMENSIONS];
+    this.expectedDimensions = dimensionsEnv
+      ? parseInt(dimensionsEnv, 10)
+      : undefined;
+
+    this.logger.log("HuggingFace service initialized", {
+      model: this.defaultModel,
+      normalize: this.shouldNormalize,
+      expectedDimensions: this.expectedDimensions,
+    });
   }
 
   async extractFeatures(
@@ -44,6 +65,7 @@ export class HuggingfaceService {
       operation: "extractFeatures",
       model,
       textLength: input.text.length,
+      normalize: this.shouldNormalize,
       timestamp: new Date().toISOString(),
     });
 
@@ -54,26 +76,53 @@ export class HuggingfaceService {
         provider: "hf-inference",
       });
 
-      let embeddingDimension = 0;
+      let embedding: number[] = [];
       if (Array.isArray(output)) {
         if (output.length > 0 && Array.isArray(output[0])) {
-          embeddingDimension = output[0].length;
+          embedding = output[0] as number[];
         } else if (typeof output[0] === "number") {
-          embeddingDimension = output.length;
+          embedding = (output as unknown as number[]) || [];
         }
       }
+
+      if (!validateEmbeddingDimensions(embedding, this.expectedDimensions)) {
+        const errorMsg = `Embedding dimensions mismatch. Expected: ${this.expectedDimensions}, Got: ${embedding.length}`;
+        this.logger.error(errorMsg, {
+          operation: "extractFeatures",
+          model,
+        });
+        throw new Error(errorMsg);
+      }
+
+      let processedEmbedding = embedding;
+      let normalized = false;
+
+      if (this.shouldNormalize) {
+        const { normalized: normVec } = normalizeEmbedding(embedding);
+        processedEmbedding = normVec;
+        normalized = true;
+        this.logger.debug("Embedding normalized for cosine similarity", {
+          operation: "extractFeatures",
+          dimensions: embedding.length,
+        });
+      }
+
+      const metadata = getEmbeddingMetadata(processedEmbedding, normalized);
 
       this.logger.log("Feature extraction completed successfully", {
         operation: "extractFeatures",
         model,
-        embeddingDimension,
+        dimensions: metadata.dimensions,
+        magnitude: metadata.magnitude.toFixed(6),
+        normalized,
         timestamp: new Date().toISOString(),
       });
 
       return {
-        embeddings: output,
+        embeddings: processedEmbedding,
         model,
         inputText: input.text,
+        embeddingMetadata: metadata,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
