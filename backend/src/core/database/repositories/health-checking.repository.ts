@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { eq, lt, desc } from 'drizzle-orm';
-import { BaseRepository } from './base.repository';
-import { healthChecking } from '../schema/health-checking';
-import { DrizzleService } from '../drizzle.service';
+import { Injectable } from "@nestjs/common";
+import { eq, lt, desc } from "drizzle-orm";
+import { BaseRepository } from "./base.repository";
+import { healthChecking } from "../schema/health-checking";
+import { DrizzleService } from "../drizzle.service";
 
 export interface CreateHealthCheckDto {
   service: string;
@@ -48,8 +48,8 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
       return result[0] as HealthCheckRecord;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error creating health check record: ${errorMessage}`,
         errorStack,
@@ -70,11 +70,11 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
 
       const found = result.length > 0;
       this.logger.log(
-        `Health check record ${found ? 'found' : 'not found'} with ID: ${id}`,
+        `Health check record ${found ? "found" : "not found"} with ID: ${id}`,
       );
       return found ? (result[0] as HealthCheckRecord) : null;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error finding health check record by ID ${id}`,
         errorStack,
@@ -96,8 +96,8 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
       this.logger.log(`Found ${result.length} health check records`);
       return result as HealthCheckRecord[];
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
-      this.logger.error('Error finding all health check records', errorStack);
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error("Error finding all health check records", errorStack);
       throw error;
     }
   }
@@ -113,11 +113,11 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
 
       const deleted = result.length > 0;
       this.logger.log(
-        `Health check record ${deleted ? 'deleted' : 'not found'} with ID: ${id}`,
+        `Health check record ${deleted ? "deleted" : "not found"} with ID: ${id}`,
       );
       return deleted;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error deleting health check record with ID ${id}`,
         errorStack,
@@ -145,8 +145,8 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
       return result.length;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error deleting old health check records: ${errorMessage}`,
         errorStack,
@@ -169,7 +169,7 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
       );
       return result.length;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error deleting health check records for service ${service}`,
         errorStack,
@@ -193,11 +193,11 @@ export class HealthCheckingRepository extends BaseRepository<HealthCheckRecord> 
 
       const found = result.length > 0;
       this.logger.log(
-        `Latest health check record ${found ? 'found' : 'not found'} for service: ${service}`,
+        `Latest health check record ${found ? "found" : "not found"} for service: ${service}`,
       );
       return found ? (result[0] as HealthCheckRecord) : null;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error finding latest health check record for service ${service}`,
         errorStack,

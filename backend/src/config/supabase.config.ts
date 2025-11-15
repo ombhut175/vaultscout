@@ -1,4 +1,4 @@
-import { ENV } from '../common/constants/string-const';
+import { ENV } from "../common/constants/string-const";
 
 export const supabaseConfig = {
   url: process.env[ENV.SUPABASE_URL],

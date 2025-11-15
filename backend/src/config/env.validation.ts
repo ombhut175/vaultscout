@@ -1,5 +1,5 @@
-import * as Joi from 'joi';
-import { ENV } from '../common/constants/string-const';
+import * as Joi from "joi";
+import { ENV } from "../common/constants/string-const";
 
 export const envValidationSchema = Joi.object({
   // Supabase Configuration
@@ -17,8 +17,8 @@ export const envValidationSchema = Joi.object({
 
   // Application Configuration
   [ENV.NODE_ENV]: Joi.string()
-    .valid('development', 'production', 'test')
-    .default('development'),
+    .valid("development", "production", "test")
+    .default("development"),
   [ENV.PORT]: Joi.number().port().default(3000),
 
   // Swagger Configuration (Optional)
@@ -27,9 +27,9 @@ export const envValidationSchema = Joi.object({
   [ENV.SWAGGER_ENABLED]: Joi.boolean().optional().default(true),
   [ENV.SWAGGER_UI_DEEP_LINKING]: Joi.boolean().optional().default(true),
   [ENV.SWAGGER_UI_DOC_EXPANSION]: Joi.string()
-    .valid('list', 'full', 'none')
+    .valid("list", "full", "none")
     .optional()
-    .default('none'),
+    .default("none"),
   [ENV.SWAGGER_UI_FILTER]: Joi.alternatives()
     .try(Joi.boolean(), Joi.string())
     .optional()
@@ -39,11 +39,11 @@ export const envValidationSchema = Joi.object({
   [ENV.FRONTEND_URL]: Joi.string()
     .uri()
     .optional()
-    .default('http://localhost:3000'),
+    .default("http://localhost:3000"),
   [ENV.REDIRECT_TO_FRONTEND_URL]: Joi.string()
     .uri()
     .optional()
-    .default('http://localhost:3000/login'),
+    .default("http://localhost:3000/login"),
 }).custom((value, helpers) => {
   // Ensure either DATABASE_URL or all individual database parameters are provided
   const hasDatabaseUrl = value[ENV.DATABASE_URL];
@@ -56,7 +56,7 @@ export const envValidationSchema = Joi.object({
 
   if (!hasDatabaseUrl && !hasIndividualParams) {
     return helpers.error(
-      'Either DATABASE_URL or all individual database parameters must be provided',
+      "Either DATABASE_URL or all individual database parameters must be provided",
     );
   }
 

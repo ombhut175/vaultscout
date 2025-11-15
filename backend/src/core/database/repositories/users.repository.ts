@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { BaseRepository } from './base.repository';
-import { users } from '../schema/users';
-import { eq } from 'drizzle-orm';
-import { MESSAGES } from '../../../common/constants/string-const';
+import { Injectable } from "@nestjs/common";
+import { BaseRepository } from "./base.repository";
+import { users } from "../schema/users";
+import { eq } from "drizzle-orm";
+import { MESSAGES } from "../../../common/constants/string-const";
 
 export interface CreateUserDto {
   id?: string; // UUID id (optional, will be auto-generated if not provided)
@@ -45,7 +45,7 @@ export class UsersRepository extends BaseRepository<UserEntity> {
       );
       return result[0] as UserEntity;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(`Failed to create user: ${userData.email}`, errorStack);
       throw error;
     }
@@ -116,7 +116,7 @@ export class UsersRepository extends BaseRepository<UserEntity> {
       this.logger.log(`User updated successfully: ${id}`);
       return result[0] as UserEntity;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(`Failed to update user: ${id}`, errorStack);
       throw error;
     }
@@ -138,7 +138,7 @@ export class UsersRepository extends BaseRepository<UserEntity> {
 
       this.logger.log(`User deleted successfully: ${id}`);
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(`Failed to delete user: ${id}`, errorStack);
       throw error;
     }
@@ -169,7 +169,7 @@ export class UsersRepository extends BaseRepository<UserEntity> {
       this.logger.log(`Email verified successfully: ${email}`);
       return result[0] as UserEntity;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(`Failed to verify email: ${email}`, errorStack);
       throw error;
     }
@@ -195,20 +195,20 @@ export class UsersRepository extends BaseRepository<UserEntity> {
   }
 
   async getAllUsers(): Promise<UserEntity[]> {
-    this.logger.log('Fetching all users');
+    this.logger.log("Fetching all users");
     try {
       const userList = await this.db.select().from(users);
       this.logger.log(`Retrieved ${userList.length} users`);
       return userList;
     } catch (error) {
-      const errorStack = error instanceof Error ? error.stack : '';
-      this.logger.error('Failed to fetch all users', errorStack);
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error("Failed to fetch all users", errorStack);
       throw error;
     }
   }
 
   async getUsersCount(): Promise<number> {
-    this.logger.log('Counting total users');
+    this.logger.log("Counting total users");
     return this.count(users);
   }
 

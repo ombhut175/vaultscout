@@ -1,5 +1,5 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
+import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { AuthenticatedRequest } from "../interfaces/authenticated-request.interface";
 
 /**
  * Decorator to extract current authenticated user from request
@@ -28,7 +28,7 @@ export const CurrentUser = createParamDecorator(
 
     if (!user) {
       throw new Error(
-        'CurrentUser decorator used without AuthGuard. Apply @UseGuards(AuthGuard) to the route.',
+        "CurrentUser decorator used without AuthGuard. Apply @UseGuards(AuthGuard) to the route.",
       );
     }
 

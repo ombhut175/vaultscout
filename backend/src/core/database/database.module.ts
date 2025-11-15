@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
 
-import { DrizzleService } from './drizzle.service';
-import { UsersRepository } from './repositories/users.repository';
-import { HealthCheckingRepository } from './repositories/health-checking.repository';
+import { DrizzleService } from "./drizzle.service";
+import { UsersRepository } from "./repositories/users.repository";
+import { HealthCheckingRepository } from "./repositories/health-checking.repository";
 
 @Module({
   imports: [ConfigModule],

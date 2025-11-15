@@ -1,7 +1,7 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { supabaseConfig } from '../../config/supabase.config';
-import { MESSAGES } from '../../common/constants/string-const';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { supabaseConfig } from "../../config/supabase.config";
+import { MESSAGES } from "../../common/constants/string-const";
 
 @Injectable()
 export class SupabaseService implements OnModuleInit {
@@ -15,14 +15,14 @@ export class SupabaseService implements OnModuleInit {
   private initializeSupabase() {
     try {
       if (!supabaseConfig.url || !supabaseConfig.anonKey) {
-        throw new Error('Missing Supabase configuration');
+        throw new Error("Missing Supabase configuration");
       }
 
       this.supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey);
-      this.logger.log('Supabase client initialized successfully');
+      this.logger.log("Supabase client initialized successfully");
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Failed to initialize Supabase: ${errorMessage}`);
       throw new Error(MESSAGES.SUPABASE_CONNECTION_ERROR);
     }
@@ -38,7 +38,7 @@ export class SupabaseService implements OnModuleInit {
   // Helper method to get service role client for admin operations
   getServiceRoleClient(): SupabaseClient {
     if (!supabaseConfig.url || !supabaseConfig.serviceRoleKey) {
-      throw new Error('Missing Supabase service role configuration');
+      throw new Error("Missing Supabase service role configuration");
     }
     return createClient(supabaseConfig.url, supabaseConfig.serviceRoleKey);
   }

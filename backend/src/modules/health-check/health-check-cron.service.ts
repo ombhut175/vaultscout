@@ -1,11 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import { HealthCheckingRepository } from '../../core/database/repositories';
+import { Injectable, Logger } from "@nestjs/common";
+import { Cron } from "@nestjs/schedule";
+import { HealthCheckingRepository } from "../../core/database/repositories";
 
 @Injectable()
 export class HealthCheckCronService {
   private readonly logger = new Logger(HealthCheckCronService.name);
-  private readonly SERVICE_NAME = 'cron-health-check';
+  private readonly SERVICE_NAME = "cron-health-check";
 
   constructor(
     private readonly healthCheckingRepository: HealthCheckingRepository,
@@ -15,13 +15,13 @@ export class HealthCheckCronService {
    * Runs every 12 minutes
    * Cron expression: '0 *\/12 * * * *' means at minute 0, 12, 24, 36, 48 of every hour
    */
-  @Cron('0 */12 * * * *', {
-    name: 'health-check-cron',
-    timeZone: 'UTC',
+  @Cron("0 */12 * * * *", {
+    name: "health-check-cron",
+    timeZone: "UTC",
   })
   async handleHealthCheckCron() {
     const startTime = Date.now();
-    this.logger.log('Health check cron job started');
+    this.logger.log("Health check cron job started");
 
     try {
       // Step 1: Add a new health check record
@@ -39,8 +39,8 @@ export class HealthCheckCronService {
       );
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Health check cron job failed: ${errorMessage}`,
         errorStack,
@@ -50,7 +50,7 @@ export class HealthCheckCronService {
       try {
         await this.healthCheckingRepository.create({
           service: this.SERVICE_NAME,
-          status: 'ERROR',
+          status: "ERROR",
           message: `Cron job failed: ${errorMessage}`,
           details: {
             error: errorMessage,
@@ -60,7 +60,7 @@ export class HealthCheckCronService {
         });
       } catch (logError) {
         const logErrorMessage =
-          logError instanceof Error ? logError.message : 'Unknown error';
+          logError instanceof Error ? logError.message : "Unknown error";
         this.logger.error(`Failed to log cron job error: ${logErrorMessage}`);
       }
     }
@@ -74,12 +74,12 @@ export class HealthCheckCronService {
 
     const record = await this.healthCheckingRepository.create({
       service: this.SERVICE_NAME,
-      status: 'HEALTHY',
-      message: 'Automated health check completed successfully',
+      status: "HEALTHY",
+      message: "Automated health check completed successfully",
       details: {
         timestamp: new Date().toISOString(),
         systemInfo,
-        cronJobType: 'scheduled-health-check',
+        cronJobType: "scheduled-health-check",
       },
     });
 
@@ -100,7 +100,7 @@ export class HealthCheckCronService {
     if (deletedCount > 0) {
       this.logger.log(`Cleaned up ${deletedCount} old health check records`);
     } else {
-      this.logger.log('No old health check records to clean up');
+      this.logger.log("No old health check records to clean up");
     }
 
     return deletedCount;
@@ -131,7 +131,7 @@ export class HealthCheckCronService {
    * Manual trigger for testing purposes
    */
   async triggerHealthCheck(): Promise<void> {
-    this.logger.log('Manual health check triggered');
+    this.logger.log("Manual health check triggered");
     await this.handleHealthCheckCron();
   }
 
@@ -150,7 +150,7 @@ export class HealthCheckCronService {
     };
   }> {
     const startTime = Date.now();
-    this.logger.log('Testing cron job execution with detailed results');
+    this.logger.log("Testing cron job execution with detailed results");
 
     try {
       // Step 1: Add a new health check record
@@ -197,8 +197,8 @@ export class HealthCheckCronService {
       return results;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(`Test execution failed: ${errorMessage}`, errorStack);
       throw error;
     }
@@ -226,8 +226,8 @@ export class HealthCheckCronService {
       };
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error getting health check stats: ${errorMessage}`,
         errorStack,

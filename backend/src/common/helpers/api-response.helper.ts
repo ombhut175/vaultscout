@@ -1,25 +1,25 @@
-export const successResponse = (data: any, message = 'Success'): unknown => ({
+export const successResponse = (data: any, message = "Success"): unknown => ({
   statusCode: 200,
   success: true,
   message,
   data,
 });
 
-export const createdResponse = (data: any, message = 'Created'): unknown => ({
+export const createdResponse = (data: any, message = "Created"): unknown => ({
   statusCode: 201,
   success: true,
   message,
   data,
 });
 
-export const updatedResponse = (data: any, message = 'Updated'): unknown => ({
+export const updatedResponse = (data: any, message = "Updated"): unknown => ({
   statusCode: 200,
   success: true,
   message,
   data,
 });
 
-export const deletedResponse = (message = 'Deleted'): unknown => ({
+export const deletedResponse = (message = "Deleted"): unknown => ({
   statusCode: 200,
   success: true,
   message,
@@ -41,10 +41,10 @@ export const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
     return error.message;
   }
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     return error;
   }
-  return 'Unknown error occurred';
+  return "Unknown error occurred";
 };
 
 export const getErrorStack = (error: unknown): string | undefined => {

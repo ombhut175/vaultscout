@@ -3,11 +3,11 @@ import {
   Logger,
   BadRequestException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { SupabaseService } from '../../core/supabase/supabase.service';
-import { UsersRepository } from '../../core/database/repositories';
-import { MESSAGES, ENV } from '../../common/constants/string-const';
-import { LoginDto, SignupDto, ForgotPasswordDto } from './dto';
+} from "@nestjs/common";
+import { SupabaseService } from "../../core/supabase/supabase.service";
+import { UsersRepository } from "../../core/database/repositories";
+import { MESSAGES, ENV } from "../../common/constants/string-const";
+import { LoginDto, SignupDto, ForgotPasswordDto } from "./dto";
 
 @Injectable()
 export class AuthService {
@@ -33,12 +33,12 @@ export class AuthService {
         );
 
         // Handle specific Supabase auth errors
-        if (error.message.includes('Invalid login credentials')) {
+        if (error.message.includes("Invalid login credentials")) {
           throw new UnauthorizedException(MESSAGES.INVALID_CREDENTIALS);
         }
-        if (error.message.includes('Email not confirmed')) {
+        if (error.message.includes("Email not confirmed")) {
           throw new UnauthorizedException(
-            'Please confirm your email before logging in',
+            "Please confirm your email before logging in",
           );
         }
 
@@ -74,7 +74,7 @@ export class AuthService {
           }
         } catch (dbError) {
           const errorMessage =
-            dbError instanceof Error ? dbError.message : 'Unknown error';
+            dbError instanceof Error ? dbError.message : "Unknown error";
           this.logger.error(
             `Database error during login for ${loginDto.email}: ${errorMessage}`,
           );
@@ -98,7 +98,7 @@ export class AuthService {
         throw error;
       }
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Unexpected login error: ${errorMessage}`);
       throw new BadRequestException(MESSAGES.UNEXPECTED_ERROR);
     }
@@ -124,13 +124,13 @@ export class AuthService {
         );
 
         // Handle specific Supabase auth errors
-        if (error.message.includes('User already registered')) {
+        if (error.message.includes("User already registered")) {
           throw new BadRequestException(MESSAGES.EMAIL_ALREADY_EXISTS);
         }
-        if (error.message.includes('Password should be at least')) {
+        if (error.message.includes("Password should be at least")) {
           throw new BadRequestException(MESSAGES.WEAK_PASSWORD);
         }
-        if (error.message.includes('Unable to validate email address')) {
+        if (error.message.includes("Unable to validate email address")) {
           throw new BadRequestException(MESSAGES.INVALID_EMAIL);
         }
 
@@ -149,7 +149,7 @@ export class AuthService {
           this.logger.log(`Public user record created for ${signupDto.email}`);
         } catch (dbError) {
           const errorMessage =
-            dbError instanceof Error ? dbError.message : 'Unknown error';
+            dbError instanceof Error ? dbError.message : "Unknown error";
           this.logger.error(
             `Failed to create public user record for ${signupDto.email}: ${errorMessage}`,
           );
@@ -172,7 +172,7 @@ export class AuthService {
         throw error;
       }
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Unexpected signup error: ${errorMessage}`);
       throw new BadRequestException(MESSAGES.UNEXPECTED_ERROR);
     }
@@ -185,7 +185,7 @@ export class AuthService {
       const { error } = await supabase.auth.resetPasswordForEmail(
         forgotPasswordDto.email,
         {
-          redirectTo: `${process.env[ENV.FRONTEND_URL] || 'http://localhost:3000'}/auth/reset-password`,
+          redirectTo: `${process.env[ENV.FRONTEND_URL] || "http://localhost:3000"}/auth/reset-password`,
         },
       );
 
@@ -196,7 +196,7 @@ export class AuthService {
 
         // For security reasons, we don't want to reveal if the email exists or not
         // So we return success even if the email doesn't exist
-        if (error.message.includes('User not found')) {
+        if (error.message.includes("User not found")) {
           this.logger.warn(
             `Password reset attempted for non-existent email: ${forgotPasswordDto.email}`,
           );
@@ -215,7 +215,7 @@ export class AuthService {
         throw error;
       }
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Unexpected forgot password error: ${errorMessage}`);
       throw new BadRequestException(MESSAGES.UNEXPECTED_ERROR);
     }
@@ -229,17 +229,17 @@ export class AuthService {
 
       if (error) {
         this.logger.error(`Logout failed for user ${userId}: ${error.message}`);
-        throw new BadRequestException('Logout failed');
+        throw new BadRequestException("Logout failed");
       }
 
       this.logger.log(`User ${userId} logged out successfully`);
-      return { message: 'Logged out successfully' };
+      return { message: "Logged out successfully" };
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Unexpected logout error: ${errorMessage}`);
       throw new BadRequestException(MESSAGES.UNEXPECTED_ERROR);
     }
@@ -262,7 +262,7 @@ export class AuthService {
         throw error;
       }
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Unexpected getCurrentUser error: ${errorMessage}`);
       throw new BadRequestException(MESSAGES.UNEXPECTED_ERROR);
     }

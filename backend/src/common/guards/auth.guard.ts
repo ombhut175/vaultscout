@@ -4,10 +4,10 @@ import {
   ExecutionContext,
   UnauthorizedException,
   Logger,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { SupabaseService } from '../../core/supabase/supabase.service';
-import { COOKIES } from '../constants/string-const';
+} from "@nestjs/common";
+import { Request } from "express";
+import { SupabaseService } from "../../core/supabase/supabase.service";
+import { COOKIES } from "../constants/string-const";
 
 /**
  * AuthGuard that validates Supabase tokens and attaches user info to request
@@ -23,12 +23,12 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const requestId = crypto.randomUUID();
 
-    this.logger.log('Authentication attempt started', {
-      operation: 'canActivate',
+    this.logger.log("Authentication attempt started", {
+      operation: "canActivate",
       requestId,
       method: request.method,
       url: request.url,
-      userAgent: request.headers['user-agent'],
+      userAgent: request.headers["user-agent"],
       timestamp: new Date().toISOString(),
     });
 
@@ -37,29 +37,29 @@ export class AuthGuard implements CanActivate {
       const token = this.extractTokenFromRequest(request);
 
       if (!token) {
-        this.logger.warn('No authorization token found', {
-          operation: 'extractToken',
+        this.logger.warn("No authorization token found", {
+          operation: "extractToken",
           requestId,
           headers: {
             authorization: request.headers.authorization
-              ? 'present'
-              : 'missing',
-            cookie: request.headers.cookie ? 'present' : 'missing',
+              ? "present"
+              : "missing",
+            cookie: request.headers.cookie ? "present" : "missing",
           },
           cookies: {
             auth_token: request.cookies?.[COOKIES.AUTH_TOKEN]
-              ? 'present'
-              : 'missing',
+              ? "present"
+              : "missing",
           },
         });
-        throw new UnauthorizedException('No authorization token provided');
+        throw new UnauthorizedException("No authorization token provided");
       }
 
-      this.logger.debug('Token extracted successfully', {
-        operation: 'extractToken',
+      this.logger.debug("Token extracted successfully", {
+        operation: "extractToken",
         requestId,
         tokenLength: token.length,
-        tokenPrefix: token.substring(0, 10) + '...',
+        tokenPrefix: token.substring(0, 10) + "...",
       });
 
       // Get user from Supabase using token
@@ -72,14 +72,14 @@ export class AuthGuard implements CanActivate {
       const authTime = Date.now() - startTime;
 
       if (error || !user) {
-        this.logger.error('Token validation failed', {
-          operation: 'getUser',
+        this.logger.error("Token validation failed", {
+          operation: "getUser",
           requestId,
-          error: error?.message || 'User not found',
+          error: error?.message || "User not found",
           authTime: `${authTime}ms`,
           timestamp: new Date().toISOString(),
         });
-        throw new UnauthorizedException('Invalid or expired token');
+        throw new UnauthorizedException("Invalid or expired token");
       }
 
       // Attach user info to request
@@ -89,8 +89,8 @@ export class AuthGuard implements CanActivate {
         supabaseUser: user, // Full user object for advanced use cases
       };
 
-      this.logger.log('Authentication successful', {
-        operation: 'canActivate',
+      this.logger.log("Authentication successful", {
+        operation: "canActivate",
         requestId,
         userId: user.id,
         email: user.email,
@@ -106,13 +106,13 @@ export class AuthGuard implements CanActivate {
       return true;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       const errorName =
-        error instanceof Error ? error.constructor.name : 'Unknown';
+        error instanceof Error ? error.constructor.name : "Unknown";
 
-      this.logger.error('Authentication failed', {
-        operation: 'canActivate',
+      this.logger.error("Authentication failed", {
+        operation: "canActivate",
         requestId,
         method: request.method,
         url: request.url,
@@ -120,7 +120,7 @@ export class AuthGuard implements CanActivate {
           message: errorMessage,
           name: errorName,
           stack:
-            process.env.NODE_ENV === 'development' ? errorStack : undefined,
+            process.env.NODE_ENV === "development" ? errorStack : undefined,
         },
         timestamp: new Date().toISOString(),
       });
@@ -130,7 +130,7 @@ export class AuthGuard implements CanActivate {
         throw error;
       }
 
-      throw new UnauthorizedException('Authentication failed');
+      throw new UnauthorizedException("Authentication failed");
     }
   }
 
@@ -142,7 +142,7 @@ export class AuthGuard implements CanActivate {
   private extractTokenFromRequest(request: Request): string | null {
     // Check Authorization header first (Bearer token)
     const authHeader = request.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
+    if (authHeader?.startsWith("Bearer ")) {
       return authHeader.substring(7);
     }
 

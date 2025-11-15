@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { HealthCheckCronService } from './health-check-cron.service';
-import { HealthCheckingRepository } from '../../core/database/repositories';
+import { Controller, Get, Post, Logger } from "@nestjs/common";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { HealthCheckCronService } from "./health-check-cron.service";
+import { HealthCheckingRepository } from "../../core/database/repositories";
 
-@ApiTags('Health Check')
-@Controller('health-check')
+@ApiTags("Health Check")
+@Controller("health-check")
 export class HealthCheckController {
   private readonly logger = new Logger(HealthCheckController.name);
 
@@ -13,25 +13,25 @@ export class HealthCheckController {
     private readonly healthCheckingRepository: HealthCheckingRepository,
   ) {}
 
-  @Get('status')
-  @ApiOperation({ summary: 'Get health check status and statistics' })
+  @Get("status")
+  @ApiOperation({ summary: "Get health check status and statistics" })
   @ApiResponse({
     status: 200,
-    description: 'Health check status retrieved successfully',
+    description: "Health check status retrieved successfully",
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        message: { type: 'string' },
+        message: { type: "string" },
         stats: {
-          type: 'object',
+          type: "object",
           properties: {
-            totalRecords: { type: 'number' },
-            serviceRecords: { type: 'number' },
-            latestRecord: { type: 'object', nullable: true },
-            lastCheckAt: { type: 'string', nullable: true },
+            totalRecords: { type: "number" },
+            serviceRecords: { type: "number" },
+            latestRecord: { type: "object", nullable: true },
+            lastCheckAt: { type: "string", nullable: true },
           },
         },
-        timestamp: { type: 'string' },
+        timestamp: { type: "string" },
       },
     },
   })
@@ -40,14 +40,14 @@ export class HealthCheckController {
       const stats = await this.healthCheckCronService.getHealthCheckStats();
 
       return {
-        message: 'Health check status retrieved successfully',
+        message: "Health check status retrieved successfully",
         stats,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error getting health check status: ${errorMessage}`,
         errorStack,
@@ -56,33 +56,33 @@ export class HealthCheckController {
     }
   }
 
-  @Post('trigger')
-  @ApiOperation({ summary: 'Manually trigger health check cron job' })
+  @Post("trigger")
+  @ApiOperation({ summary: "Manually trigger health check cron job" })
   @ApiResponse({
     status: 200,
-    description: 'Health check triggered successfully',
+    description: "Health check triggered successfully",
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        message: { type: 'string' },
-        timestamp: { type: 'string' },
+        message: { type: "string" },
+        timestamp: { type: "string" },
       },
     },
   })
   async triggerHealthCheck() {
     try {
-      this.logger.log('Manual health check trigger requested');
+      this.logger.log("Manual health check trigger requested");
 
       await this.healthCheckCronService.triggerHealthCheck();
 
       return {
-        message: 'Health check triggered successfully',
+        message: "Health check triggered successfully",
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error triggering health check: ${errorMessage}`,
         errorStack,
@@ -91,35 +91,35 @@ export class HealthCheckController {
     }
   }
 
-  @Post('test-cron')
-  @ApiOperation({ summary: 'Test the cron job function with detailed results' })
+  @Post("test-cron")
+  @ApiOperation({ summary: "Test the cron job function with detailed results" })
   @ApiResponse({
     status: 200,
-    description: 'Cron job function tested successfully with detailed results',
+    description: "Cron job function tested successfully with detailed results",
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        message: { type: 'string' },
-        success: { type: 'boolean' },
-        executionTime: { type: 'number' },
+        message: { type: "string" },
+        success: { type: "boolean" },
+        executionTime: { type: "number" },
         results: {
-          type: 'object',
+          type: "object",
           properties: {
-            recordsBeforeCleanup: { type: 'number' },
-            recordsAfterCleanup: { type: 'number' },
-            newRecordId: { type: 'number' },
-            deletedCount: { type: 'number' },
-            newRecord: { type: 'object' },
+            recordsBeforeCleanup: { type: "number" },
+            recordsAfterCleanup: { type: "number" },
+            newRecordId: { type: "number" },
+            deletedCount: { type: "number" },
+            newRecord: { type: "object" },
           },
         },
-        timestamp: { type: 'string' },
-        duration: { type: 'string' },
+        timestamp: { type: "string" },
+        duration: { type: "string" },
       },
     },
   })
   async testCronJobFunction() {
     const startTime = Date.now();
-    this.logger.log('Testing cron job function directly');
+    this.logger.log("Testing cron job function directly");
 
     try {
       // Get initial count
@@ -137,7 +137,7 @@ export class HealthCheckController {
       const executionTime = endTime - startTime;
 
       const response = {
-        message: 'Cron job function executed successfully',
+        message: "Cron job function executed successfully",
         success: true,
         executionTime,
         results: {
@@ -156,8 +156,8 @@ export class HealthCheckController {
       const executionTime = endTime - startTime;
 
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
 
       this.logger.error(
         `Error testing cron job function: ${errorMessage}`,
@@ -165,7 +165,7 @@ export class HealthCheckController {
       );
 
       return {
-        message: 'Cron job function test failed',
+        message: "Cron job function test failed",
         success: false,
         executionTime,
         error: {
@@ -178,33 +178,33 @@ export class HealthCheckController {
     }
   }
 
-  @Get('records')
-  @ApiOperation({ summary: 'Get recent health check records' })
+  @Get("records")
+  @ApiOperation({ summary: "Get recent health check records" })
   @ApiResponse({
     status: 200,
-    description: 'Health check records retrieved successfully',
+    description: "Health check records retrieved successfully",
     schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        message: { type: 'string' },
+        message: { type: "string" },
         records: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              id: { type: 'number' },
-              service: { type: 'string' },
-              status: { type: 'string' },
-              message: { type: 'string', nullable: true },
-              details: { type: 'object', nullable: true },
-              checkedAt: { type: 'string' },
-              createdAt: { type: 'string' },
-              updatedAt: { type: 'string' },
+              id: { type: "number" },
+              service: { type: "string" },
+              status: { type: "string" },
+              message: { type: "string", nullable: true },
+              details: { type: "object", nullable: true },
+              checkedAt: { type: "string" },
+              createdAt: { type: "string" },
+              updatedAt: { type: "string" },
             },
           },
         },
-        count: { type: 'number' },
-        timestamp: { type: 'string' },
+        count: { type: "number" },
+        timestamp: { type: "string" },
       },
     },
   })
@@ -213,15 +213,15 @@ export class HealthCheckController {
       const records = await this.healthCheckingRepository.findAll(50); // Get last 50 records
 
       return {
-        message: 'Health check records retrieved successfully',
+        message: "Health check records retrieved successfully",
         records,
         count: records.length,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : '';
+        error instanceof Error ? error.message : "Unknown error";
+      const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
         `Error getting health check records: ${errorMessage}`,
         errorStack,

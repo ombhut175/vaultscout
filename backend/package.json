@@ -31,6 +31,9 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@bull-board/express": "^5.20.6",
+    "@bull-board/nestjs": "^5.20.6",
+    "@nestjs/bullmq": "^10.1.1",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.2",
@@ -43,6 +46,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.7",
     "@types/pg": "^8.15.5",
+    "bullmq": "^5.14.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
@@ -50,6 +54,7 @@
     "drizzle-kit": "^0.24.0",
     "drizzle-orm": "^0.31.2",
     "express-basic-auth": "^1.2.1",
+    "ioredis": "^5.4.1",
     "joi": "^18.0.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",

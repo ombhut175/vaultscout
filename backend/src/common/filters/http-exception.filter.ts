@@ -4,9 +4,9 @@ import {
   ArgumentsHost,
   HttpException,
   Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { MESSAGES } from '../constants/string-const';
+} from "@nestjs/common";
+import { Request, Response } from "express";
+import { MESSAGES } from "../constants/string-const";
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
