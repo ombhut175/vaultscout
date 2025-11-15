@@ -183,4 +183,54 @@ export class SupabaseStorageService {
 
     return data.publicUrl;
   }
+
+  async getSignedUrl(
+    bucket: string,
+    path: string,
+    expiresIn = 3600,
+  ): Promise<string> {
+    this.logger.log("Generating signed URL", {
+      operation: "getSignedUrl",
+      bucket,
+      path,
+      expiresIn,
+      timestamp: new Date().toISOString(),
+    });
+
+    try {
+      const { data, error } = await this.serviceClient.storage
+        .from(bucket)
+        .createSignedUrl(path, expiresIn);
+
+      if (error) {
+        this.logger.error("Failed to generate signed URL", {
+          operation: "getSignedUrl",
+          bucket,
+          path,
+          error: error.message,
+        });
+        throw new Error(`Failed to generate signed URL: ${error.message}`);
+      }
+
+      this.logger.log("Signed URL generated successfully", {
+        operation: "getSignedUrl",
+        bucket,
+        path,
+        expiresIn,
+        timestamp: new Date().toISOString(),
+      });
+
+      return data.signedUrl;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error("Get signed URL operation failed", {
+        operation: "getSignedUrl",
+        bucket,
+        path,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  }
 }
