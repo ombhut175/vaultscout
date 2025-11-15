@@ -19,6 +19,7 @@ import {
 } from "../../../common/constants/string-const";
 import { DocumentUploadDto } from "../dto/document-upload.dto";
 import { DocumentUploadResponseDto } from "../dto/document-upload-response.dto";
+import { DocumentQueueService } from "../../queues/services/document-queue.service";
 
 @Injectable()
 export class DocumentProcessingService {
@@ -26,6 +27,24 @@ export class DocumentProcessingService {
   private readonly embeddingModel: string;
   private readonly embeddingDim: number;
   private readonly pineconeIndexName: string;
+  private readonly maxFileSizeBytes = 50 * 1024 * 1024;
+  private readonly minFileSizeBytes = 1;
+  private readonly allowedMimeTypes = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "text/markdown",
+    "application/json",
+    "application/octet-stream",
+  ];
+  private readonly allowedExtensions = [
+    "pdf",
+    "docx",
+    "txt",
+    "md",
+    "markdown",
+    "json",
+  ];
 
   constructor(
     private readonly storageService: SupabaseStorageService,
@@ -38,6 +57,7 @@ export class DocumentProcessingService {
     private readonly chunksRepo: ChunksRepository,
     private readonly filesRepo: FilesRepository,
     private readonly embeddingsRepo: EmbeddingsRepository,
+    private readonly documentQueueService: DocumentQueueService,
   ) {
     this.embeddingModel =
       process.env[ENV.HF_EMBEDDING_MODEL] || "BAAI/bge-large-en-v1.5";
@@ -314,6 +334,124 @@ export class DocumentProcessingService {
       throw new BadRequestException(
         `${MESSAGES.DOCUMENT_PROCESSING_FAILED}: ${errorMessage}`,
       );
+    }
+  }
+
+  async queueDocumentForProcessing(
+    uploadDto: DocumentUploadDto,
+    file: Express.Multer.File,
+    userId: string,
+  ): Promise<DocumentUploadResponseDto> {
+    this.validateFile(file);
+
+    this.parseUploadDto(uploadDto);
+
+    const contentHash = this.calculateFileHash(file.buffer);
+
+    const document = await this.documentsRepo.create({
+      orgId: uploadDto.orgId,
+      createdBy: userId,
+      title: uploadDto.title,
+      fileType: "pending",
+      tags: uploadDto.tags || [],
+      status: "queued",
+      aclGroups: uploadDto.aclGroups || [],
+      contentHash,
+    });
+
+    this.logger.log("Document record created for queuing", {
+      documentId: document.id,
+      orgId: uploadDto.orgId,
+      title: uploadDto.title,
+    });
+
+    const jobId = await this.documentQueueService.processDocument({
+      documentId: document.id,
+      orgId: uploadDto.orgId,
+      userId,
+      title: uploadDto.title,
+      tags: uploadDto.tags || [],
+      aclGroups: uploadDto.aclGroups || [],
+      notes: uploadDto.notes || "Initial upload",
+      fileBuffer: file.buffer,
+      originalFilename: file.originalname,
+      mimeType: file.mimetype,
+      fileSize: file.size,
+      contentHash,
+    });
+
+    this.logger.log("Document processing job queued", {
+      documentId: document.id,
+      jobId,
+    });
+
+    return {
+      documentId: document.id,
+      jobId,
+      status: "queued",
+      message: "Document queued for processing",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  private validateFile(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException("File is required");
+    }
+
+    if (file.size < this.minFileSizeBytes) {
+      throw new BadRequestException("File is empty or invalid");
+    }
+
+    if (file.size > this.maxFileSizeBytes) {
+      throw new BadRequestException(
+        `${MESSAGES.FILE_TOO_LARGE}: Maximum file size is ${this.maxFileSizeBytes / (1024 * 1024)}MB, received ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+      );
+    }
+
+    const fileExtension = file.originalname
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+    if (
+      !fileExtension ||
+      !this.allowedExtensions.includes(fileExtension)
+    ) {
+      throw new BadRequestException(
+        `Invalid file type. Allowed extensions: ${this.allowedExtensions.join(", ")}`,
+      );
+    }
+
+    if (!this.allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Invalid MIME type. Allowed types: ${this.allowedMimeTypes.join(", ")}`,
+      );
+    }
+  }
+
+  private parseUploadDto(uploadDto: DocumentUploadDto): void {
+    if (uploadDto.tags && typeof uploadDto.tags === "string") {
+      const tagsStr = uploadDto.tags as string;
+      if (tagsStr.trim().startsWith("[")) {
+        uploadDto.tags = JSON.parse(tagsStr);
+      } else {
+        uploadDto.tags = tagsStr
+          .split(",")
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+      }
+    }
+
+    if (uploadDto.aclGroups && typeof uploadDto.aclGroups === "string") {
+      const aclStr = uploadDto.aclGroups as string;
+      if (aclStr.trim().startsWith("[")) {
+        uploadDto.aclGroups = JSON.parse(aclStr);
+      } else {
+        uploadDto.aclGroups = aclStr
+          .split(",")
+          .map((g) => g.trim())
+          .filter((g) => g.length > 0);
+      }
     }
   }
 

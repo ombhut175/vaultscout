@@ -4,7 +4,6 @@ import {
   Body,
   UseInterceptors,
   UploadedFile,
-  BadRequestException,
   UseGuards,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -16,33 +15,13 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from "@nestjs/swagger";
-import { DocumentProcessingService } from "./services/document-processing.service";
 import { DocumentUploadDto, DocumentUploadResponseDto } from "./dto";
-import { MESSAGES } from "../../common/constants/string-const";
 import { AuthGuard, CurrentUser } from "../../common";
+import { DocumentProcessingService } from "./services/document-processing.service";
 
 @ApiTags("Documents")
 @Controller("documents")
 export class DocumentsController {
-  private readonly maxFileSizeBytes = 50 * 1024 * 1024;
-  private readonly minFileSizeBytes = 1;
-  private readonly allowedMimeTypes = [
-    "application/pdf",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "text/plain",
-    "text/markdown",
-    "application/json",
-    "application/octet-stream",
-  ];
-  private readonly allowedExtensions = [
-    "pdf",
-    "docx",
-    "txt",
-    "md",
-    "markdown",
-    "json",
-  ];
-
   constructor(
     private readonly documentProcessingService: DocumentProcessingService,
   ) {}
@@ -51,19 +30,22 @@ export class DocumentsController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: "Upload and process document",
+    summary: "Upload and queue document for processing",
     description: `
-      Uploads a document file to Supabase storage and processes it through the embedding pipeline.
+      Uploads a document file and queues it for background processing through the embedding pipeline.
       
-      **Processing Steps:**
-      1. Validate file type and size
-      2. Upload raw file to vs-raw-private bucket
-      3. Extract text from the document
-      4. Save extracted text to vs-extracted-private bucket
-      5. Chunk the text with overlap for context preservation
-      6. Generate embeddings using HuggingFace BGE-large-en-v1.5 model (1024 dimensions)
-      7. Upsert vectors to Pinecone with metadata
-      8. Persist all metadata to PostgreSQL database
+      **Processing Steps (Background):**
+      1. Validate file type and size (immediate)
+      2. Create document record with status="queued" (immediate)
+      3. Queue job for background processing (immediate)
+      4. Upload raw file to vs-raw-private bucket (background)
+      5. Extract text from the document (background)
+      6. Save extracted text to vs-extracted-private bucket (background)
+      7. Chunk the text with overlap for context preservation (background)
+      8. Generate embeddings using HuggingFace BGE-large-en-v1.5 model (background)
+      9. Upsert vectors to Pinecone with metadata (background)
+      10. Persist all metadata to PostgreSQL database (background)
+      11. Update document status to "ready" (background)
       
       **Supported File Types:**
       - Plain text files (.txt)
@@ -76,6 +58,10 @@ export class DocumentsController {
       - Documents are scoped to organizations (orgId required)
       - Optional ACL groups for fine-grained access control
       - Created by authenticated user (automatically tracked)
+      
+      **Response:**
+      - Returns immediately with document ID and job ID
+      - Check document status using GET /api/documents/:id endpoint
     `,
   })
   @ApiConsumes("multipart/form-data")
@@ -123,7 +109,7 @@ export class DocumentsController {
   })
   @ApiResponse({
     status: 201,
-    description: "Document uploaded and processed successfully",
+    description: "Document uploaded and queued for processing",
     type: DocumentUploadResponseDto,
   })
   @ApiResponse({
@@ -159,64 +145,7 @@ export class DocumentsController {
     @Body() uploadDto: DocumentUploadDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<DocumentUploadResponseDto> {
-    if (!file) {
-      throw new BadRequestException("File is required");
-    }
-
-    if (file.size < this.minFileSizeBytes) {
-      throw new BadRequestException("File is empty or invalid");
-    }
-
-    if (file.size > this.maxFileSizeBytes) {
-      throw new BadRequestException(
-        `${MESSAGES.FILE_TOO_LARGE}: Maximum file size is ${this.maxFileSizeBytes / (1024 * 1024)}MB, received ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
-      );
-    }
-
-    const fileExtension = file.originalname
-      .split(".")
-      .pop()
-      ?.toLowerCase();
-    if (
-      !fileExtension ||
-      !this.allowedExtensions.includes(fileExtension)
-    ) {
-      throw new BadRequestException(
-        `Invalid file type. Allowed extensions: ${this.allowedExtensions.join(", ")}`,
-      );
-    }
-
-    if (!this.allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        `Invalid MIME type. Allowed types: ${this.allowedMimeTypes.join(", ")}`,
-      );
-    }
-
-    if (uploadDto.tags && typeof uploadDto.tags === "string") {
-      const tagsStr = uploadDto.tags as string;
-      if (tagsStr.trim().startsWith("[")) {
-        uploadDto.tags = JSON.parse(tagsStr);
-      } else {
-        uploadDto.tags = tagsStr
-          .split(",")
-          .map((t) => t.trim())
-          .filter((t) => t.length > 0);
-      }
-    }
-
-    if (uploadDto.aclGroups && typeof uploadDto.aclGroups === "string") {
-      const aclStr = uploadDto.aclGroups as string;
-      if (aclStr.trim().startsWith("[")) {
-        uploadDto.aclGroups = JSON.parse(aclStr);
-      } else {
-        uploadDto.aclGroups = aclStr
-          .split(",")
-          .map((g) => g.trim())
-          .filter((g) => g.length > 0);
-      }
-    }
-
-    return this.documentProcessingService.uploadAndProcess(
+    return this.documentProcessingService.queueDocumentForProcessing(
       uploadDto,
       file,
       userId,
