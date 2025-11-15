@@ -1,5 +1,11 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsUUID } from "class-validator";
+import {
+  IsString,
+  IsNotEmpty,
+  IsArray,
+  IsOptional,
+  IsUUID,
+} from "class-validator";
 
 export class DocumentUploadDto {
   @ApiProperty({
@@ -17,14 +23,6 @@ export class DocumentUploadDto {
   @IsString()
   @IsNotEmpty()
   title!: string;
-
-  @ApiProperty({
-    description: "File type/extension",
-    example: "pdf",
-  })
-  @IsString()
-  @IsNotEmpty()
-  fileType!: string;
 
   @ApiProperty({
     description: "Tags for document categorization",
@@ -47,15 +45,6 @@ export class DocumentUploadDto {
   @IsUUID("4", { each: true })
   @IsOptional()
   aclGroups?: string[];
-
-  @ApiProperty({
-    description: "Owner user ID",
-    example: "550e8400-e29b-41d4-a716-446655440002",
-    required: false,
-  })
-  @IsUUID()
-  @IsOptional()
-  ownerUserId?: string;
 
   @ApiProperty({
     description: "Version notes",

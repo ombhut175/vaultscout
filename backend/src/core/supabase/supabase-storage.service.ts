@@ -1,7 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseService } from "./supabase.service";
-import { SUPABASE_BUCKETS, MESSAGES } from "../../common/constants/string-const";
+import {
+  SUPABASE_BUCKETS,
+  MESSAGES,
+} from "../../common/constants/string-const";
 
 interface UploadResult {
   path: string;
@@ -16,7 +19,9 @@ export class SupabaseStorageService {
 
   constructor(private readonly supabaseService: SupabaseService) {
     this.serviceClient = this.supabaseService.getServiceRoleClient();
-    this.logger.log("SupabaseStorageService initialized with service role client");
+    this.logger.log(
+      "SupabaseStorageService initialized with service role client",
+    );
   }
 
   async uploadRaw(
@@ -177,9 +182,7 @@ export class SupabaseStorageService {
   }
 
   async getPublicUrl(bucket: string, path: string): Promise<string> {
-    const { data } = this.serviceClient.storage
-      .from(bucket)
-      .getPublicUrl(path);
+    const { data } = this.serviceClient.storage.from(bucket).getPublicUrl(path);
 
     return data.publicUrl;
   }

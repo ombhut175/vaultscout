@@ -15,9 +15,15 @@ export const searchLogs = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: uuid("org_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
+      .references(() => organizations.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
-    userId: uuid("user_id").references(() => users.id),
+    userId: uuid("user_id").references(() => users.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     queryText: text("query_text").notNull(),
     filters: jsonb("filters").default({}).notNull(),
     topk: integer("topk").default(10).notNull(),

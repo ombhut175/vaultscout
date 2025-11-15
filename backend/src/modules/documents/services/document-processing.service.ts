@@ -12,7 +12,11 @@ import {
   FilesRepository,
   EmbeddingsRepository,
 } from "../../../core/database/repositories";
-import { MESSAGES, ENV, SUPABASE_BUCKETS } from "../../../common/constants/string-const";
+import {
+  MESSAGES,
+  ENV,
+  SUPABASE_BUCKETS,
+} from "../../../common/constants/string-const";
 import { DocumentUploadDto } from "../dto/document-upload.dto";
 import { DocumentUploadResponseDto } from "../dto/document-upload-response.dto";
 
@@ -35,21 +39,28 @@ export class DocumentProcessingService {
     private readonly filesRepo: FilesRepository,
     private readonly embeddingsRepo: EmbeddingsRepository,
   ) {
-    this.embeddingModel = process.env[ENV.HF_EMBEDDING_MODEL] || "BAAI/bge-large-en-v1.5";
+    this.embeddingModel =
+      process.env[ENV.HF_EMBEDDING_MODEL] || "BAAI/bge-large-en-v1.5";
     this.embeddingDim = Number(process.env[ENV.EMBEDDING_DIMENSIONS] || 1024);
-    this.pineconeIndexName = process.env[ENV.PINECONE_INDEX_NAME] || "vaultscout-bge-1024";
+    this.pineconeIndexName =
+      process.env[ENV.PINECONE_INDEX_NAME] || "vaultscout-bge-1024";
   }
 
   async uploadAndProcess(
     uploadDto: DocumentUploadDto,
     file: Express.Multer.File,
+    userId: string,
   ): Promise<DocumentUploadResponseDto> {
+    const fileExtension =
+      file.originalname.split(".").pop()?.toLowerCase() || "unknown";
+
     this.logger.log("Starting document upload and processing", {
       operation: "uploadAndProcess",
       orgId: uploadDto.orgId,
       title: uploadDto.title,
-      fileType: uploadDto.fileType,
+      fileType: fileExtension,
       fileSize: file.size,
+      userId,
       timestamp: new Date().toISOString(),
     });
 
@@ -60,9 +71,9 @@ export class DocumentProcessingService {
 
       const document = await this.documentsRepo.create({
         orgId: uploadDto.orgId,
-        ownerUserId: uploadDto.ownerUserId || null,
+        createdBy: userId,
         title: uploadDto.title,
-        fileType: uploadDto.fileType,
+        fileType: "pending",
         tags: uploadDto.tags || [],
         status: "processing",
         aclGroups: uploadDto.aclGroups || [],
@@ -103,6 +114,7 @@ export class DocumentProcessingService {
         sizeBytes: uploadResult.sizeBytes,
         sha256: contentHash,
         isPublic: false,
+        createdBy: userId,
       });
 
       this.logger.log("File record created", {
@@ -163,7 +175,8 @@ export class DocumentProcessingService {
           batchSize: batchTexts.length,
         });
 
-        const embedResults = await this.embeddingsService.embedPassages(batchTexts);
+        const embedResults =
+          await this.embeddingsService.embedPassages(batchTexts);
 
         if (embedResults.length !== batchTexts.length) {
           const errorMsg = `Embedding batch size mismatch: expected ${batchTexts.length}, got ${embedResults.length}`;
@@ -205,7 +218,7 @@ export class DocumentProcessingService {
           chunk_id: chunkRecord.id,
           chunk_position: chunkRecord.position,
           org_id: uploadDto.orgId,
-          file_type: uploadDto.fileType,
+          file_type: fileExtension,
           tags: uploadDto.tags || [],
           acl_groups: uploadDto.aclGroups || [],
         });
@@ -250,11 +263,15 @@ export class DocumentProcessingService {
         embeddingsCount: chunkRecords.length,
       });
 
-      await this.documentsRepo.updateStatus(document.id, "ready");
+      await this.documentsRepo.update(document.id, {
+        status: "ready",
+        fileType: fileExtension,
+      });
 
       this.logger.log("Document processing complete", {
         documentId: document.id,
         status: "ready",
+        fileType: fileExtension,
       });
 
       return {
@@ -269,7 +286,7 @@ export class DocumentProcessingService {
       };
     } catch (error) {
       const errorMessage =
-error instanceof Error ? error.message : "Unknown error";
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error("Document processing failed", {
         operation: "uploadAndProcess",
         documentId,

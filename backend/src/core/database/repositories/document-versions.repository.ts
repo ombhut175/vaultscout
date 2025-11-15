@@ -6,7 +6,9 @@ import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 @Injectable()
-export class DocumentVersionsRepository extends BaseRepository<typeof documentVersions.$inferSelect> {
+export class DocumentVersionsRepository extends BaseRepository<
+  typeof documentVersions.$inferSelect
+> {
   constructor(drizzleService: DrizzleService) {
     super(drizzleService);
   }
@@ -18,7 +20,10 @@ export class DocumentVersionsRepository extends BaseRepository<typeof documentVe
       version: data.version,
     });
 
-    const result = await this.db.insert(documentVersions).values(data).returning();
+    const result = await this.db
+      .insert(documentVersions)
+      .values(data)
+      .returning();
     return result[0];
   }
 

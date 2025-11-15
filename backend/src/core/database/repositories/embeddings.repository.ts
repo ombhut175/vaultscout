@@ -6,7 +6,9 @@ import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 @Injectable()
-export class EmbeddingsRepository extends BaseRepository<typeof embeddings.$inferSelect> {
+export class EmbeddingsRepository extends BaseRepository<
+  typeof embeddings.$inferSelect
+> {
   constructor(drizzleService: DrizzleService) {
     super(drizzleService);
   }
@@ -16,7 +18,7 @@ export class EmbeddingsRepository extends BaseRepository<typeof embeddings.$infe
     return result[0];
   }
 
-  async createMany(data: typeof embeddings.$inferInsert[]) {
+  async createMany(data: (typeof embeddings.$inferInsert)[]) {
     this.logger.log("Creating multiple embeddings", {
       operation: "createMany",
       count: data.length,
@@ -38,9 +40,6 @@ export class EmbeddingsRepository extends BaseRepository<typeof embeddings.$infe
   }
 
   async findByOrgId(orgId: string) {
-    return this.db
-      .select()
-      .from(embeddings)
-      .where(eq(embeddings.orgId, orgId));
+    return this.db.select().from(embeddings).where(eq(embeddings.orgId, orgId));
   }
 }

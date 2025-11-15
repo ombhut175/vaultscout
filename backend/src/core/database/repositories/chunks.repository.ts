@@ -6,7 +6,9 @@ import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 @Injectable()
-export class ChunksRepository extends BaseRepository<typeof chunks.$inferSelect> {
+export class ChunksRepository extends BaseRepository<
+  typeof chunks.$inferSelect
+> {
   constructor(drizzleService: DrizzleService) {
     super(drizzleService);
   }
@@ -16,7 +18,7 @@ export class ChunksRepository extends BaseRepository<typeof chunks.$inferSelect>
     return result[0];
   }
 
-  async createMany(data: typeof chunks.$inferInsert[]) {
+  async createMany(data: (typeof chunks.$inferInsert)[]) {
     this.logger.log("Creating multiple chunks", {
       operation: "createMany",
       count: data.length,
@@ -38,10 +40,7 @@ export class ChunksRepository extends BaseRepository<typeof chunks.$inferSelect>
   }
 
   async findByVersionId(versionId: string) {
-    return this.db
-      .select()
-      .from(chunks)
-      .where(eq(chunks.versionId, versionId));
+    return this.db.select().from(chunks).where(eq(chunks.versionId, versionId));
   }
 
   async deleteByVersionId(versionId: string) {

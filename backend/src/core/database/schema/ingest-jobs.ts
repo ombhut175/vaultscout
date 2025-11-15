@@ -15,16 +15,25 @@ export const ingestJobs = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: uuid("org_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
+      .references(() => organizations.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
     documentId: uuid("document_id")
-      .references(() => documents.id, { onDelete: "cascade" })
+      .references(() => documents.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
     versionId: uuid("version_id")
-      .references(() => documentVersions.id, { onDelete: "cascade" })
+      .references(() => documentVersions.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
-    stage: text("stage").notNull(), // parse | embed | index
-    status: text("status").notNull(), // queued | running | succeeded | failed
+    stage: text("stage").notNull(),
+    status: text("status").notNull(),
     attempts: integer("attempts").default(0).notNull(),
     lastError: text("last_error"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

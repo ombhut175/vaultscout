@@ -27,16 +27,10 @@ export class FilesRepository extends BaseRepository<typeof files.$inferSelect> {
   }
 
   async findByVersionId(versionId: string) {
-    return this.db
-      .select()
-      .from(files)
-      .where(eq(files.versionId, versionId));
+    return this.db.select().from(files).where(eq(files.versionId, versionId));
   }
 
   async findByDocumentId(documentId: string) {
-    return this.db
-      .select()
-      .from(files)
-      .where(eq(files.documentId, documentId));
+    return this.db.select().from(files).where(eq(files.documentId, documentId));
   }
 }

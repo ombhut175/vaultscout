@@ -6,7 +6,9 @@ import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 @Injectable()
-export class DocumentsRepository extends BaseRepository<typeof documents.$inferSelect> {
+export class DocumentsRepository extends BaseRepository<
+  typeof documents.$inferSelect
+> {
   constructor(drizzleService: DrizzleService) {
     super(drizzleService);
   }
@@ -40,6 +42,22 @@ export class DocumentsRepository extends BaseRepository<typeof documents.$inferS
     const result = await this.db
       .update(documents)
       .set({ status, updatedAt: new Date() })
+      .where(eq(documents.id, id))
+      .returning();
+
+    return result[0];
+  }
+
+  async update(id: string, data: Partial<typeof documents.$inferInsert>) {
+    this.logger.log("Updating document", {
+      operation: "update",
+      documentId: id,
+      fields: Object.keys(data),
+    });
+
+    const result = await this.db
+      .update(documents)
+      .set({ ...data, updatedAt: new Date() })
       .where(eq(documents.id, id))
       .returning();
 

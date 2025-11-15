@@ -13,7 +13,10 @@ export const documentVersions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     documentId: uuid("document_id")
-      .references(() => documents.id, { onDelete: "cascade" })
+      .references(() => documents.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      })
       .notNull(),
     version: integer("version").notNull(),
     notes: text("notes"),

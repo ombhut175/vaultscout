@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Request } from "express";
 import { SupabaseService } from "../../core/supabase/supabase.service";
+import { UsersRepository } from "../../core/database/repositories/users.repository";
 import { COOKIES } from "../constants/string-const";
 
 /**
@@ -17,7 +18,10 @@ import { COOKIES } from "../constants/string-const";
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger(AuthGuard.name);
 
-  constructor(private readonly supabaseService: SupabaseService) {}
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    private readonly usersRepo: UsersRepository,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -82,17 +86,40 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException("Invalid or expired token");
       }
 
-      // Attach user info to request
+      let localUser = await this.usersRepo.findByExternalUserId(user.id);
+
+      if (!localUser) {
+        this.logger.log("User not found in local database, creating new user", {
+          operation: "syncUser",
+          requestId,
+          supabaseUserId: user.id,
+          email: user.email,
+        });
+
+        localUser = await this.usersRepo.create({
+          externalUserId: user.id,
+          email: user.email ?? undefined,
+        });
+
+        this.logger.log("Local user created successfully", {
+          operation: "syncUser",
+          requestId,
+          localUserId: localUser.id,
+          supabaseUserId: user.id,
+        });
+      }
+
       (request as any).user = {
-        id: user.id,
+        id: localUser.id,
         email: user.email,
-        supabaseUser: user, // Full user object for advanced use cases
+        supabaseUser: user,
       };
 
       this.logger.log("Authentication successful", {
         operation: "canActivate",
         requestId,
-        userId: user.id,
+        localUserId: localUser.id,
+        supabaseUserId: user.id,
         email: user.email,
         authTime: `${authTime}ms`,
         userMetadata: {
