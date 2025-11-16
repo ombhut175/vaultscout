@@ -1,10 +1,10 @@
 # VaultScout Frontend
 
-Enterprise knowledge discovery and semantic search application built with Next.js 14.
+Enterprise knowledge discovery and semantic search application built with Next.js 16.
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router)
+- **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript (strict mode)
 - **State Management:** Zustand + SWR
 - **Styling:** Tailwind CSS + shadcn/ui
