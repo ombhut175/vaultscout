@@ -152,7 +152,7 @@ export class DocumentsRepository extends BaseRepository<
 
   /**
    * Find documents accessible to a specific user
-   * Simplified for MVP - returns all documents
+   * Filters by documents created by the user
    * @param userId User ID
    * @param orgId Organization ID (optional)
    * @param page Page number (1-indexed)
@@ -181,7 +181,7 @@ export class DocumentsRepository extends BaseRepository<
 
     const offset = (page - 1) * limit;
 
-    const conditions = [];
+    const conditions = [eq(documents.createdBy, userId)];
     if (orgId) {
       conditions.push(eq(documents.orgId, orgId));
     }
@@ -208,7 +208,7 @@ export class DocumentsRepository extends BaseRepository<
       })
       .from(documents)
       .leftJoin(users, eq(documents.createdBy, users.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .where(and(...conditions))
       .orderBy(desc(documents.createdAt))
       .limit(limit)
       .offset(offset);
@@ -216,7 +216,7 @@ export class DocumentsRepository extends BaseRepository<
     const countQuery = this.db
       .select({ count: count() })
       .from(documents)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
+      .where(and(...conditions));
 
     const [docs, totalResult] = await Promise.all([query, countQuery]);
 
