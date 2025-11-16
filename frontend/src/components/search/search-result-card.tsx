@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { FileText, ExternalLink } from 'lucide-react';
+import { FileText, ExternalLink, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SearchResult } from '@/lib/api/search';
+import { DocumentsAPI } from '@/lib/api/documents';
 import { cn } from '@/lib/utils';
 import hackLog from '@/lib/logger';
 
@@ -72,6 +73,16 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
     });
   };
 
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    hackLog.dev('SearchResultCard: Download clicked', { documentId, documentTitle });
+    try {
+      await DocumentsAPI.download(documentId, documentTitle);
+    } catch (error) {
+      hackLog.error('SearchResultCard: Download failed', { error });
+    }
+  };
+
   return (
     <Card className={cn('hover:shadow-md transition-shadow', className)}>
       <CardContent className="p-6">
@@ -130,14 +141,18 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
           )}
         </div>
 
-        {/* View Document Link */}
-        <div className="mt-4 pt-4 border-t">
+        {/* Actions */}
+        <div className="mt-4 pt-4 border-t flex items-center gap-2">
           <Link href={`/documents/${documentId}` as any} onClick={handleClick}>
             <Button variant="ghost" size="sm" className="h-8 px-3">
               View Document
               <ExternalLink className="h-3 w-3 ml-2" />
             </Button>
           </Link>
+          <Button variant="ghost" size="sm" className="h-8 px-3" onClick={handleDownload}>
+            <Download className="h-3 w-3 mr-2" />
+            Download
+          </Button>
         </div>
       </CardContent>
     </Card>

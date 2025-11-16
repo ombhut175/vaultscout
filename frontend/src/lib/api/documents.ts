@@ -316,4 +316,60 @@ export class DocumentsAPI {
       throw new Error(errorMessage);
     }
   }
+
+  /**
+   * Get download URL for document
+   */
+  static async getDownloadUrl(id: string): Promise<string> {
+    try {
+      const url = `documents/${id}/download`;
+      const response = await apiRequest.get<{ url: string }>(url, false);
+      
+      hackLog.apiSuccess('GET', url, {
+        documentId: id,
+        component: 'DocumentsAPI'
+      });
+
+      return response.url;
+    } catch (error) {
+      hackLog.apiError('GET', `documents/${id}/download`, {
+        error,
+        documentId: id,
+        component: 'DocumentsAPI'
+      });
+      
+      const errorMessage = extractErrorMessage(error, 'Failed to get download URL');
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Download document
+   */
+  static async download(id: string, title?: string): Promise<void> {
+    try {
+      const url = await this.getDownloadUrl(id);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = title || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      hackLog.apiSuccess('DOWNLOAD', `documents/${id}`, {
+        documentId: id,
+        component: 'DocumentsAPI'
+      });
+    } catch (error) {
+      hackLog.apiError('DOWNLOAD', `documents/${id}`, {
+        error,
+        documentId: id,
+        component: 'DocumentsAPI'
+      });
+      
+      const errorMessage = extractErrorMessage(error, 'Failed to download document');
+      throw new Error(errorMessage);
+    }
+  }
 }

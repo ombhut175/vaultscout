@@ -1,10 +1,10 @@
 'use client';
 
-import { Document } from '@/lib/api/documents';
+import { Document, DocumentsAPI } from '@/lib/api/documents';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Calendar, MoreVertical } from 'lucide-react';
+import { FileText, Calendar, MoreVertical, Download } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +43,15 @@ export function DocumentCard({ document, onEdit, onDelete, showActions = true }:
     setSelectedDoc(document);
     setDeleteDialogOpen(true);
     onDelete?.(document);
+  };
+
+  const handleDownload = async () => {
+    hackLog.dev('DocumentCard: Download clicked', { documentId: document.id });
+    try {
+      await DocumentsAPI.download(document.id, document.title);
+    } catch (error) {
+      hackLog.error('DocumentCard: Download failed', { error });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -93,6 +102,10 @@ export function DocumentCard({ document, onEdit, onDelete, showActions = true }:
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={handleViewDetails}>
                   View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleEdit}>
                   Edit

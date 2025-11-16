@@ -536,4 +536,63 @@ export class DocumentsController {
     const versions = await this.documentsService.getVersions(id, userId);
     return successResponse(versions, "Versions retrieved successfully");
   }
+
+  @Get(":id/download")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get document download URL",
+    description: `
+      Generates a temporary signed URL for downloading the original document file.
+      
+      **Access Control:**
+      - Returns 403 if user does not have access to this document
+      - Returns 404 if document does not exist
+      
+      **Response:**
+      - Returns a signed URL valid for 1 hour
+      - URL points to the original uploaded file
+    `,
+  })
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "Document ID",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Download URL generated successfully",
+    schema: {
+      type: "object",
+      properties: {
+        success: { type: "boolean", example: true },
+        message: { type: "string", example: "Download URL generated successfully" },
+        data: {
+          type: "object",
+          properties: {
+            url: { type: "string", example: "https://..." },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - user does not have access to this document",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Document not found",
+  })
+  async getDownloadUrl(
+    @CurrentUser("id") userId: string,
+    @Param("id") id: string,
+  ) {
+    const result = await this.documentsService.getDownloadUrl(id, userId);
+    return successResponse(result, "Download URL generated successfully");
+  }
 }

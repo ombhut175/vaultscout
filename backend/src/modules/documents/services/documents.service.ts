@@ -2,7 +2,9 @@ import { Injectable, Logger } from "@nestjs/common";
 import { DocumentsRepository } from "../../../core/database/repositories/documents.repository";
 import { ChunksRepository } from "../../../core/database/repositories/chunks.repository";
 import { DocumentVersionsRepository } from "../../../core/database/repositories/document-versions.repository";
+import { FilesRepository } from "../../../core/database/repositories/files.repository";
 import { VectorIndexService } from "../../pinecone/services/vector-index.service";
+import { SupabaseStorageService } from "../../../core/supabase/supabase-storage.service";
 import { UpdateDocumentDto, DocumentFiltersDto } from "../dto";
 
 @Injectable()
@@ -13,7 +15,9 @@ export class DocumentsService {
     private readonly documentsRepository: DocumentsRepository,
     private readonly chunksRepository: ChunksRepository,
     private readonly documentVersionsRepository: DocumentVersionsRepository,
+    private readonly filesRepository: FilesRepository,
     private readonly vectorIndexService: VectorIndexService,
+    private readonly storageService: SupabaseStorageService,
   ) {}
 
   //#region Find Operations
@@ -258,6 +262,47 @@ export class DocumentsService {
     });
 
     return versions;
+  }
+
+  /**
+   * Get download URL for a document
+   * @param id Document ID
+   * @param userId User ID
+   * @returns Signed URL for downloading the document
+   */
+  async getDownloadUrl(id: string, userId: string): Promise<{ url: string }> {
+    this.logger.log("Generating download URL", {
+      operation: "getDownloadUrl",
+      documentId: id,
+      userId,
+    });
+
+    await this.findOne(id, userId);
+
+    const files = await this.filesRepository.findByDocumentId(id);
+    
+    if (!files || files.length === 0) {
+      throw new Error("No files found for this document");
+    }
+
+    const rawFile = files.find(f => f.bucket === "vs-raw-private");
+    
+    if (!rawFile) {
+      throw new Error("Original file not found");
+    }
+
+    const signedUrl = await this.storageService.getSignedUrl(
+      rawFile.bucket,
+      rawFile.path,
+      3600
+    );
+
+    this.logger.log("Download URL generated", {
+      operation: "getDownloadUrl",
+      documentId: id,
+    });
+
+    return { url: signedUrl };
   }
 
   //#endregion

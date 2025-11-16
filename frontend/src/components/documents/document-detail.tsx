@@ -1,12 +1,13 @@
 'use client';
 
 import { useDocument } from '@/hooks/useDocument';
+import { DocumentsAPI } from '@/lib/api/documents';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, FileText, Calendar, User, Tag, Shield } from 'lucide-react';
+import { AlertCircle, FileText, Calendar, User, Tag, Shield, Download } from 'lucide-react';
 import { useDocsStore } from '@/hooks/use-docs-store';
 import hackLog from '@/lib/logger';
 
@@ -48,6 +49,17 @@ export function DocumentDetail({
       setSelectedDoc(document);
       setDeleteDialogOpen(true);
       onDelete?.();
+    }
+  };
+
+  const handleDownload = async () => {
+    if (document) {
+      hackLog.dev('DocumentDetail: Download clicked', { documentId });
+      try {
+        await DocumentsAPI.download(document.id, document.title);
+      } catch (error) {
+        hackLog.error('DocumentDetail: Download failed', { error });
+      }
     }
   };
 
@@ -123,6 +135,10 @@ export function DocumentDetail({
           </div>
           {showActions && (
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
               <Button variant="outline" size="sm" onClick={handleEdit}>
                 Edit
               </Button>
