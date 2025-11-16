@@ -134,20 +134,27 @@ export class AuthController {
 
       this.logger.log(`Login successful for email: ${loginDto.email}`);
 
-      // Set never-expiring cookie with the access token
       if (result.session?.access_token) {
-        const cookieOptions: any = {
+        const isProduction = process.env.NODE_ENV === "production";
+        const isRenderEnvironment = !!process.env.RENDER;
+        const requireSecureCookies = isProduction || isRenderEnvironment;
+        
+        const cookieOptions: {
+          httpOnly: boolean;
+          secure: boolean;
+          sameSite: "none" | "lax" | "strict";
+          path: string;
+          domain?: string;
+          maxAge?: number;
+        } = {
           httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-          // No maxAge or expires means the cookie never expires (session cookie that persists)
+          secure: requireSecureCookies,
+          sameSite: requireSecureCookies ? "none" : "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
         };
 
-        // Set domain for production if COOKIE_DOMAIN is provided
-        if (
-          process.env.NODE_ENV === "production" &&
-          process.env[ENV.COOKIE_DOMAIN]
-        ) {
+        if (process.env[ENV.COOKIE_DOMAIN]) {
           cookieOptions.domain = process.env[ENV.COOKIE_DOMAIN];
         }
 
@@ -159,7 +166,12 @@ export class AuthController {
 
         this.logger.log(
           `Auth cookie set for user: ${loginDto.email} with options:`,
-          cookieOptions,
+          JSON.stringify({
+            ...cookieOptions,
+            isProduction,
+            isRenderEnvironment,
+            requireSecureCookies,
+          }),
         );
       }
 
@@ -434,18 +446,24 @@ export class AuthController {
         `Logout request for user: ${user.email} (ID: ${user.id})`,
       );
 
-      // Clear the authentication cookie
-      const clearCookieOptions: any = {
+      const isProduction = process.env.NODE_ENV === "production";
+      const isRenderEnvironment = !!process.env.RENDER;
+      const requireSecureCookies = isProduction || isRenderEnvironment;
+      
+      const clearCookieOptions: {
+        httpOnly: boolean;
+        secure: boolean;
+        sameSite: "none" | "lax" | "strict";
+        path: string;
+        domain?: string;
+      } = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: requireSecureCookies,
+        sameSite: requireSecureCookies ? "none" : "lax",
+        path: "/",
       };
 
-      // Set domain for production if COOKIE_DOMAIN is provided
-      if (
-        process.env.NODE_ENV === "production" &&
-        process.env[ENV.COOKIE_DOMAIN]
-      ) {
+      if (process.env[ENV.COOKIE_DOMAIN]) {
         clearCookieOptions.domain = process.env[ENV.COOKIE_DOMAIN];
       }
 

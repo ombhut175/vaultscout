@@ -26,43 +26,41 @@ async function bootstrap() {
     app.use(cookieParser());
     logger.log("Cookie parser middleware enabled");
 
-    // Global CORS
     const nodeEnv = process.env[ENV.NODE_ENV] ?? "development";
     const isProd = nodeEnv === "production";
+    const isRender = !!process.env.RENDER;
 
-    logger.log(`Environment: ${nodeEnv}`);
+    logger.log(`Environment: ${nodeEnv}${isRender ? " (Render)" : ""}`);
 
-    if (nodeEnv === "development") {
-      // Allow all origins in development (echoes request origin, supports credentials)
+    if (nodeEnv === "development" && !isRender) {
       app.enableCors({
         origin: true,
         credentials: true,
       });
       logger.log("CORS enabled for development (allow all origins)");
-    } else if (isProd) {
-      // Restrict to FRONTEND_URL in production
-      const frontendUrl = process.env[ENV.FRONTEND_URL];
-      if (!frontendUrl) {
-        logger.error("FRONTEND_URL must be set when NODE_ENV=production");
-        throw new Error("FRONTEND_URL must be set when NODE_ENV=production");
-      }
-      app.enableCors({
-        origin: frontendUrl,
-        credentials: true,
-      });
-      logger.log(`CORS enabled for production (origin: ${frontendUrl})`);
     } else {
-      // For other environments, default to FRONTEND_URL if provided, otherwise throw
       const frontendUrl = process.env[ENV.FRONTEND_URL];
       if (!frontendUrl) {
-        logger.error(`FRONTEND_URL must be set when NODE_ENV=${nodeEnv}`);
-        throw new Error(`FRONTEND_URL must be set when NODE_ENV=${nodeEnv}`);
+        logger.error(
+          `FRONTEND_URL must be set when NODE_ENV=${nodeEnv} or on Render`,
+        );
+        throw new Error(
+          `FRONTEND_URL must be set when NODE_ENV=${nodeEnv} or on Render`,
+        );
       }
+      
+      const allowedOrigins = frontendUrl.split(",").map((url) => url.trim());
+      
       app.enableCors({
-        origin: frontendUrl,
+        origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
         credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+        exposedHeaders: ["Set-Cookie"],
       });
-      logger.log(`CORS enabled for ${nodeEnv} (origin: ${frontendUrl})`);
+      logger.log(
+        `CORS enabled for ${isProd ? "production" : nodeEnv} (origins: ${allowedOrigins.join(", ")})`,
+      );
     }
 
     // Global exception filter
