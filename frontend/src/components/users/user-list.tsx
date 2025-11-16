@@ -5,7 +5,6 @@ import { useUsersStore } from '@/hooks/use-users-store';
 import { UserCard } from './user-card';
 import { UserFilters } from './user-filters';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Pagination,
   PaginationContent,
@@ -15,7 +14,9 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Users as UsersIcon } from 'lucide-react';
+import { PremiumCardWrapper } from '@/components/ui/premium-card-wrapper';
+import { motion } from 'framer-motion';
 import hackLog from '@/lib/logger';
 
 interface UserListProps {
@@ -44,20 +45,24 @@ export function UserList({ orgId }: UserListProps) {
     setPage(newPage);
   };
 
-  // Loading skeleton
+  // Loading skeleton with premium styling
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <UserFilters />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-6 w-3/4 mb-4" />
-                <Skeleton className="h-4 w-1/2 mb-2" />
-                <Skeleton className="h-4 w-1/3" />
-              </CardContent>
-            </Card>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="rounded-xl border border-black/10 bg-white/60 dark:border-white/10 dark:bg-slate-900/40 backdrop-blur-md p-6 shadow-lg"
+            >
+              <Skeleton className="h-6 w-3/4 mb-4" />
+              <Skeleton className="h-4 w-1/2 mb-2" />
+              <Skeleton className="h-4 w-1/3" />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -79,20 +84,30 @@ export function UserList({ orgId }: UserListProps) {
     );
   }
 
-  // Empty state
+  // Empty state with premium styling
   if (users.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <UserFilters />
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-muted-foreground text-center">
-              {filters.searchTerm
-                ? 'No users found matching your search.'
-                : 'No users found. Add users to get started.'}
-            </p>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-xl border border-black/10 bg-white/60 dark:border-white/10 dark:bg-slate-900/40 backdrop-blur-md p-12 shadow-lg text-center"
+        >
+          <div className="flex justify-center mb-4">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <UsersIcon className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <p className="text-lg font-semibold text-foreground mb-2">
+            {filters.searchTerm ? 'No users found' : 'No users yet'}
+          </p>
+          <p className="text-muted-foreground">
+            {filters.searchTerm
+              ? 'Try adjusting your search criteria.'
+              : 'Add users to get started with your organization.'}
+          </p>
+        </motion.div>
       </div>
     );
   }
@@ -106,10 +121,12 @@ export function UserList({ orgId }: UserListProps) {
         Showing {users.length} of {total} users
       </div>
 
-      {/* User grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {users.map((user) => (
-          <UserCard key={user.id} user={user} />
+      {/* User grid with premium cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {users.map((user, index) => (
+          <PremiumCardWrapper key={user.id} index={index}>
+            <UserCard user={user} />
+          </PremiumCardWrapper>
         ))}
       </div>
 

@@ -94,3 +94,7 @@ temp/
 **/.vscode/
 frontend/.vscode/
 backend/.vscode/
+
+
+.aim/
+**/.aim/

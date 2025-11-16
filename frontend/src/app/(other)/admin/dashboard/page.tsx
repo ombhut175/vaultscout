@@ -24,6 +24,7 @@ import {
   Users,
   HardDrive,
   AlertCircle,
+  Shield,
 } from 'lucide-react';
 import hackLog from '@/lib/logger';
 import { ROUTES } from '@/constants/routes';
@@ -155,7 +156,7 @@ export default function AdminDashboardPage() {
   return (
     <AdminOnly
       fallback={
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:from-[#0B1020] dark:to-[#0A0F1D]">
           <AppNavigation />
           <main className="container mx-auto px-4 py-8">
             <Alert variant="destructive">
@@ -168,20 +169,41 @@ export default function AdminDashboardPage() {
         </div>
       }
     >
-      <div className="min-h-screen bg-background">
+      <div className="relative min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:from-[#0B1020] dark:to-[#0A0F1D] dark:text-slate-100 overflow-hidden">
+        {/* Premium background */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-gradient-to-tr from-primary/10 to-primary/5 blur-3xl" />
+          
+          <div
+            className="absolute inset-0 opacity-[0.05]"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, hsl(var(--color-border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--color-border)) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+              backgroundPosition: "-1px -1px",
+            }}
+          />
+        </div>
+
         <AppNavigation />
-        <main className="container mx-auto px-4 py-8">
-          <div className="space-y-6">
+        <main className="relative z-10 container mx-auto px-4 py-12 sm:px-6 lg:px-8">
+          <div className="space-y-8">
             {/* Page Header */}
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-              <p className="text-muted-foreground mt-2">
-                Monitor system performance and user activity
-              </p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">Admin Dashboard</h1>
+                <p className="text-lg text-muted-foreground mt-1">
+                  Monitor system performance and user activity
+                </p>
+              </div>
             </div>
 
-            {/* Key Metrics */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {/* Key Metrics with premium styling */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title="Total Documents"
                 value={stats.totalDocuments}

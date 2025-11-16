@@ -4,7 +4,6 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { useDocsStore } from '@/hooks/use-docs-store';
 import { DocumentCard } from './document-card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Pagination,
   PaginationContent,
@@ -14,7 +13,9 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, FileText } from 'lucide-react';
+import { PremiumCardWrapper } from '@/components/ui/premium-card-wrapper';
+import { motion } from 'framer-motion';
 import hackLog from '@/lib/logger';
 
 interface DocumentListProps {
@@ -47,23 +48,27 @@ export function DocumentList({ orgId }: DocumentListProps) {
     setPage(newPage);
   };
 
-  // Loading skeleton
+  // Loading skeleton with premium styling
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-6 w-3/4 mb-4" />
-                <Skeleton className="h-4 w-1/2 mb-2" />
-                <div className="flex gap-2 mt-3">
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                  <Skeleton className="h-6 w-16 rounded-full" />
-                </div>
-                <Skeleton className="h-4 w-1/3 mt-3" />
-              </CardContent>
-            </Card>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="rounded-xl border border-black/10 bg-white/60 dark:border-white/10 dark:bg-slate-900/40 backdrop-blur-md p-6 shadow-lg"
+            >
+              <Skeleton className="h-6 w-3/4 mb-4" />
+              <Skeleton className="h-4 w-1/2 mb-2" />
+              <div className="flex gap-2 mt-3">
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-1/3 mt-3" />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -82,18 +87,28 @@ export function DocumentList({ orgId }: DocumentListProps) {
     );
   }
 
-  // Empty state
+  // Empty state with premium styling
   if (documents.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground text-center">
-            {filters.searchTerm
-              ? 'No documents found matching your search.'
-              : 'No documents found. Upload documents to get started.'}
-          </p>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-xl border border-black/10 bg-white/60 dark:border-white/10 dark:bg-slate-900/40 backdrop-blur-md p-12 shadow-lg text-center"
+      >
+        <div className="flex justify-center mb-4">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <FileText className="h-8 w-8 text-primary" />
+          </div>
+        </div>
+        <p className="text-lg font-semibold text-foreground mb-2">
+          {filters.searchTerm ? 'No documents found' : 'No documents yet'}
+        </p>
+        <p className="text-muted-foreground">
+          {filters.searchTerm
+            ? 'Try adjusting your search or filters.'
+            : 'Upload documents to get started.'}
+        </p>
+      </motion.div>
     );
   }
 
@@ -104,10 +119,12 @@ export function DocumentList({ orgId }: DocumentListProps) {
         Showing {documents.length} of {total} documents
       </div>
 
-      {/* Document grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {documents.map((document) => (
-          <DocumentCard key={document.id} document={document} />
+      {/* Document grid with premium cards */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {documents.map((document, index) => (
+          <PremiumCardWrapper key={document.id} index={index}>
+            <DocumentCard document={document} />
+          </PremiumCardWrapper>
         ))}
       </div>
 
