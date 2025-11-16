@@ -19,18 +19,18 @@ export class SearchService {
   //#region Semantic Search
 
   /**
-   * Perform semantic search
-   * Simplified for MVP - no ACL filtering
+   * Perform semantic search filtered by user's created documents
    * @param userId User ID
    * @param searchQuery Search query parameters
    */
   async semanticSearch(userId: string, searchQuery: SearchQueryDto) {
     const startTime = Date.now();
-    const { query, topK = 10, fileType, tags } = searchQuery;
+    const { query, topK = 10, fileType, tags, orgId } = searchQuery;
 
     this.logger.log("Starting semantic search", {
       operation: "semanticSearch",
       userId,
+      orgId,
       query: query.substring(0, 50),
       topK,
       filters: { fileType, tags },
@@ -54,9 +54,9 @@ export class SearchService {
 
       const vectorResults = await this.pineconeSearchService.vectorSearch({
         query,
-        topK,
+        topK: topK * 2,
         filter: Object.keys(pineconeFilter).length > 0 ? pineconeFilter : undefined,
-        namespace: "",
+        namespace: orgId || "",
       });
 
       this.logger.log("Pinecone search completed", {
@@ -64,7 +64,6 @@ export class SearchService {
         resultCount: vectorResults.length,
       });
 
-      // Step 5: Enrich results with document and chunk metadata
       const enrichedResults = await Promise.all(
         vectorResults.map(async (result) => {
           const metadata = result.metadata || {};
@@ -72,12 +71,12 @@ export class SearchService {
           const documentId = metadata.document_id as string;
 
           try {
-            // Get chunk details
             const chunk = await this.chunksRepository.findById(chunkId);
+            const document = await this.documentsRepository.findById(documentId);
 
-            // Get document details
-            const document =
-              await this.documentsRepository.findById(documentId);
+            if (document.createdBy !== userId) {
+              return null;
+            }
 
             return {
               id: chunkId,
@@ -106,14 +105,14 @@ export class SearchService {
         }),
       );
 
-      // Filter out null results (failed enrichments)
-      const validResults = enrichedResults.filter((r) => r !== null);
+      const validResults = enrichedResults
+        .filter((r) => r !== null)
+        .slice(0, topK);
 
       const latencyMs = Date.now() - startTime;
 
-      // Step 6: Log search
       const matchIds = validResults.map((r) => r.chunkId);
-      await this.logSearch(userId, null, query, topK, matchIds, latencyMs, {
+      await this.logSearch(userId, orgId || null, query, topK, matchIds, latencyMs, {
         fileType,
         tags,
       });
@@ -145,8 +144,7 @@ export class SearchService {
         latencyMs,
       });
 
-      // Log failed search
-      await this.logSearch(userId, null, query, topK, [], latencyMs, {
+      await this.logSearch(userId, searchQuery.orgId || null, query, topK, [], latencyMs, {
         fileType,
         tags,
       });
