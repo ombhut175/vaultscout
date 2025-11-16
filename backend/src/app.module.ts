@@ -15,6 +15,10 @@ import { QueuesModule } from "./modules/queues/queues.module";
 import { HuggingfaceModule } from "./modules/huggingface/huggingface.module";
 import { PineconeModule } from "./modules/pinecone/pinecone.module";
 import { DocumentsModule } from "./modules/documents/documents.module";
+import { OrganizationsModule } from "./modules/organizations/organizations.module";
+import { UsersModule } from "./modules/users/users.module";
+import { GroupsModule } from "./modules/groups/groups.module";
+import { SearchModule } from "./modules/search/search.module";
 import { envValidationSchema } from "./config/env.validation";
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
@@ -39,6 +43,10 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
         keepAlive: 30000,
         family: 4,
         retryStrategy: (times) => Math.min(times * 50, 2000),
+        lazyConnect: false,
+        maxLoadingRetryTime: 10000,
+        enableAutoPipelining: true,
+        commandTimeout: 300000,
       },
     }),
     BullBoardModule.forRoot({
@@ -55,6 +63,10 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
     HuggingfaceModule,
     PineconeModule,
     DocumentsModule,
+    OrganizationsModule,
+    UsersModule,
+    GroupsModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

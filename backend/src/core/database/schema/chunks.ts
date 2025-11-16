@@ -41,16 +41,12 @@ export const chunks = pgTable(
     contentHash: text("content_hash").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    uniqueDocVersionPosition: unique().on(
+  (table) => [
+    unique().on(table.documentId, table.versionId, table.position),
+    index("chunks_doc_version_position_idx").on(
       table.documentId,
       table.versionId,
       table.position,
     ),
-    docVersionPositionIdx: index("chunks_doc_version_position_idx").on(
-      table.documentId,
-      table.versionId,
-      table.position,
-    ),
-  }),
+  ],
 );

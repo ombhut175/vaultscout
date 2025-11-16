@@ -13,6 +13,8 @@
     "type-check:strict": "tsc --noEmit --strict",
     "validate": "npm run type-check && npm run lint:check",
     "validate:strict": "npm run type-check:strict && npm run lint:strict",
+    "test:build": "bash scripts/test-build.sh",
+    "test:build:win": "scripts\\test-build.bat",
     "start": "next start -p 5322"
   },
   "dependencies": {
@@ -52,6 +54,7 @@
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.5.1",
+    "eslint-config-next": "^16.0.3",
     "framer-motion": "^12.23.24",
     "geist": "latest",
     "input-otp": "^1.4.1",

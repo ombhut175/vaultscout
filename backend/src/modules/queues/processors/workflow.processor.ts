@@ -11,8 +11,10 @@ export interface WorkflowJobData {
 
 @Processor("workflow", {
   concurrency: 2,
-  stalledInterval: 5000,
-  maxStalledCount: 2,
+  stalledInterval: 30000,
+  maxStalledCount: 3,
+  lockDuration: 120000,
+  lockRenewTime: 30000,
 })
 export class WorkflowProcessor extends WorkerHost {
   private readonly logger = new Logger(WorkflowProcessor.name);

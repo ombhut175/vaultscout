@@ -11,6 +11,7 @@ export function createRedisConnection(): Redis {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
       enableOfflineQueue: false,
+      commandTimeout: 300000,
       retryStrategy: (times: number) => {
         const delay = Math.min(times * 50, 2000);
         return delay;

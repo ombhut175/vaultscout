@@ -18,11 +18,9 @@ export const documentAclGroups = pgTable(
       })
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.documentId, table.groupId] }),
-    documentIdx: index("document_acl_groups_document_idx").on(
-      table.documentId,
-    ),
-    groupIdx: index("document_acl_groups_group_idx").on(table.groupId),
-  }),
+  (table) => [
+    primaryKey({ columns: [table.documentId, table.groupId] }),
+    index("document_acl_groups_document_idx").on(table.documentId),
+    index("document_acl_groups_group_idx").on(table.groupId),
+  ],
 );

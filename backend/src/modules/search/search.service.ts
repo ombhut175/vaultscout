@@ -1,0 +1,404 @@
+import { Injectable, Logger } from "@nestjs/common";
+import { SearchRepository } from "../../core/database/repositories/search.repository";
+import { DocumentsRepository } from "../../core/database/repositories/documents.repository";
+import { ChunksRepository } from "../../core/database/repositories/chunks.repository";
+import { SearchService as PineconeSearchService } from "../pinecone/services/search.service";
+import { SearchQueryDto } from "./dto";
+
+@Injectable()
+export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
+
+  constructor(
+    private readonly searchRepository: SearchRepository,
+    private readonly documentsRepository: DocumentsRepository,
+    private readonly chunksRepository: ChunksRepository,
+    private readonly pineconeSearchService: PineconeSearchService,
+  ) {}
+
+  //#region Semantic Search
+
+  /**
+   * Perform semantic search with ACL filtering
+   * @param userId User ID for ACL filtering
+   * @param searchQuery Search query parameters
+   */
+  async semanticSearch(userId: string, searchQuery: SearchQueryDto) {
+    const startTime = Date.now();
+    const { query, orgId, topK = 10, fileType, tags } = searchQuery;
+
+    this.logger.log("Starting semantic search", {
+      operation: "semanticSearch",
+      userId,
+      orgId,
+      query: query.substring(0, 50),
+      topK,
+      filters: { fileType, tags },
+    });
+
+    try {
+      // Step 1: Get user's accessible group IDs
+      const groupIds =
+        await this.searchRepository.getUserAccessibleGroupIds(userId);
+
+      if (groupIds.length === 0) {
+        this.logger.warn("User has no accessible groups", {
+          operation: "semanticSearch",
+          userId,
+          orgId,
+        });
+
+        // Log search with no results
+        await this.logSearch(userId, orgId, query, topK, [], 0, {
+          fileType,
+          tags,
+        });
+
+        return {
+          results: [],
+          total: 0,
+          query,
+          latencyMs: Date.now() - startTime,
+        };
+      }
+
+      // Step 2: Get accessible document IDs
+      const accessibleDocIds =
+        await this.searchRepository.getDocumentsByGroupIds(groupIds, orgId);
+
+      if (accessibleDocIds.length === 0) {
+        this.logger.warn("User has no accessible documents", {
+          operation: "semanticSearch",
+          userId,
+          orgId,
+          groupCount: groupIds.length,
+        });
+
+        // Log search with no results
+        await this.logSearch(userId, orgId, query, topK, [], 0, {
+          fileType,
+          tags,
+        });
+
+        return {
+          results: [],
+          total: 0,
+          query,
+          latencyMs: Date.now() - startTime,
+        };
+      }
+
+      // Step 3: Build Pinecone filter
+      const pineconeFilter: Record<string, any> = {
+        documentId: { $in: accessibleDocIds },
+      };
+
+      if (fileType) {
+        pineconeFilter.fileType = fileType;
+      }
+
+      if (tags && tags.length > 0) {
+        pineconeFilter.tags = { $in: tags };
+      }
+
+      this.logger.log("Executing Pinecone search", {
+        operation: "semanticSearch",
+        accessibleDocCount: accessibleDocIds.length,
+        filter: pineconeFilter,
+      });
+
+      // Step 4: Perform vector search
+      const vectorResults = await this.pineconeSearchService.vectorSearch({
+        query,
+        topK,
+        filter: pineconeFilter,
+        namespace: orgId, // Use orgId as namespace
+      });
+
+      this.logger.log("Pinecone search completed", {
+        operation: "semanticSearch",
+        resultCount: vectorResults.length,
+      });
+
+      // Step 5: Enrich results with document and chunk metadata
+      const enrichedResults = await Promise.all(
+        vectorResults.map(async (result) => {
+          const metadata = result.metadata || {};
+          const chunkId = metadata.chunkId as string;
+          const documentId = metadata.documentId as string;
+
+          try {
+            // Get chunk details
+            const chunk = await this.chunksRepository.findById(chunkId);
+
+            // Get document details
+            const document =
+              await this.documentsRepository.findById(documentId);
+
+            return {
+              chunkId,
+              documentId,
+              documentTitle: document.title,
+              text: chunk.text,
+              sectionTitle: chunk.sectionTitle,
+              page: chunk.page,
+              position: chunk.position,
+              score: result.score,
+              fileType: document.fileType,
+              tags: document.tags,
+            };
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
+            this.logger.error("Failed to enrich search result", {
+              operation: "semanticSearch",
+              chunkId,
+              documentId,
+              error: errorMessage,
+            });
+            return null;
+          }
+        }),
+      );
+
+      // Filter out null results (failed enrichments)
+      const validResults = enrichedResults.filter((r) => r !== null);
+
+      const latencyMs = Date.now() - startTime;
+
+      // Step 6: Log search
+      const matchIds = validResults.map((r) => r.chunkId);
+      await this.logSearch(userId, orgId, query, topK, matchIds, latencyMs, {
+        fileType,
+        tags,
+      });
+
+      this.logger.log("Semantic search completed", {
+        operation: "semanticSearch",
+        resultCount: validResults.length,
+        latencyMs,
+      });
+
+      return {
+        results: validResults,
+        total: validResults.length,
+        query,
+        latencyMs,
+      };
+    } catch (error) {
+      const latencyMs = Date.now() - startTime;
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
+      this.logger.error("Semantic search failed", {
+        operation: "semanticSearch",
+        userId,
+        orgId,
+        query: query.substring(0, 50),
+        error: errorMessage,
+        stack: errorStack,
+        latencyMs,
+      });
+
+      // Log failed search
+      await this.logSearch(userId, orgId, query, topK, [], latencyMs, {
+        fileType,
+        tags,
+      });
+
+      throw error;
+    }
+  }
+
+  //#endregion
+
+  //#region Search History
+
+  /**
+   * Get search history for a user
+   * @param userId User ID
+   * @param orgId Organization ID
+   * @param page Page number
+   * @param limit Items per page
+   */
+  async getSearchHistory(userId: string, orgId: string, page = 1, limit = 20) {
+    this.logger.log("Getting search history", {
+      operation: "getSearchHistory",
+      userId,
+      orgId,
+      page,
+      limit,
+    });
+
+    const { logs, total } = await this.searchRepository.getSearchHistory(
+      userId,
+      orgId,
+      page,
+      limit,
+    );
+
+    const history = logs.map((log) => ({
+      id: log.id,
+      queryText: log.queryText,
+      filters: log.filters,
+      topk: log.topk,
+      latencyMs: log.latencyMs || 0,
+      matchCount: log.matchIds.length,
+      createdAt: log.createdAt,
+    }));
+
+    this.logger.log("Search history retrieved", {
+      operation: "getSearchHistory",
+      count: history.length,
+      total,
+    });
+
+    return {
+      history,
+      total,
+    };
+  }
+
+  //#endregion
+
+  //#region Search Suggestions
+
+  /**
+   * Get search suggestions based on user's search history
+   * @param userId User ID
+   * @param orgId Organization ID
+   * @param limit Number of suggestions
+   */
+  async getSearchSuggestions(userId: string, orgId: string, limit = 10) {
+    this.logger.log("Getting search suggestions", {
+      operation: "getSearchSuggestions",
+      userId,
+      orgId,
+      limit,
+    });
+
+    // Get recent search history
+    const { logs } = await this.searchRepository.getSearchHistory(
+      userId,
+      orgId,
+      1,
+      100, // Get last 100 searches
+    );
+
+    // Group by query text and count occurrences
+    const queryMap = new Map<string, { count: number; lastSearched: Date }>();
+
+    logs.forEach((log) => {
+      const existing = queryMap.get(log.queryText);
+      if (existing) {
+        existing.count++;
+        if (log.createdAt > existing.lastSearched) {
+          existing.lastSearched = log.createdAt;
+        }
+      } else {
+        queryMap.set(log.queryText, {
+          count: 1,
+          lastSearched: log.createdAt,
+        });
+      }
+    });
+
+    // Convert to array and sort by count (descending) and lastSearched (descending)
+    const suggestions = Array.from(queryMap.entries())
+      .map(([query, data]) => ({
+        query,
+        count: data.count,
+        lastSearched: data.lastSearched,
+      }))
+      .sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        return b.lastSearched.getTime() - a.lastSearched.getTime();
+      })
+      .slice(0, limit);
+
+    this.logger.log("Search suggestions generated", {
+      operation: "getSearchSuggestions",
+      count: suggestions.length,
+    });
+
+    return {
+      suggestions,
+    };
+  }
+
+  //#endregion
+
+  //#region Clear Search History
+
+  /**
+   * Clear all search history for a user in an organization
+   * @param userId User ID
+   * @param orgId Organization ID
+   */
+  async clearSearchHistory(userId: string, orgId: string) {
+    this.logger.log("Clearing search history", {
+      operation: "clearSearchHistory",
+      userId,
+      orgId,
+    });
+
+    const deletedCount = await this.searchRepository.clearSearchHistory(
+      userId,
+      orgId,
+    );
+
+    this.logger.log("Search history cleared", {
+      operation: "clearSearchHistory",
+      deletedCount,
+    });
+
+    return {
+      deletedCount,
+      message: `Successfully cleared ${deletedCount} search history entries`,
+    };
+  }
+
+  //#endregion
+
+  //#region Helper Methods
+
+  /**
+   * Log a search query
+   */
+  private async logSearch(
+    userId: string,
+    orgId: string,
+    queryText: string,
+    topk: number,
+    matchIds: string[],
+    latencyMs: number,
+    filters?: { fileType?: string; tags?: string[] },
+  ) {
+    try {
+      await this.searchRepository.logSearch({
+        userId,
+        orgId,
+        queryText,
+        topk,
+        matchIds,
+        latencyMs,
+        filters: filters || {},
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error("Failed to log search", {
+        operation: "logSearch",
+        userId,
+        orgId,
+        error: errorMessage,
+      });
+      // Don't throw - logging failure shouldn't break search
+    }
+  }
+
+  //#endregion
+}

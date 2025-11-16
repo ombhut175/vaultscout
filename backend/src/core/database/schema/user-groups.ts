@@ -18,7 +18,5 @@ export const userGroups = pgTable(
       })
       .notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.groupId] }),
-  }),
+  (table) => [primaryKey({ columns: [table.userId, table.groupId] })],
 );

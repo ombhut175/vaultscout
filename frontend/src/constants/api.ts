@@ -27,6 +27,54 @@ export const API_ENDPOINTS = {
   USERS: {
     ME: 'users/me',
     ORGANIZATION_MEMBERSHIP: 'users/organization-membership',
+    LIST: 'users',
+    GET: (id: string) => `users/${id}`,
+    UPDATE: (id: string) => `users/${id}`,
+    DELETE: (id: string) => `users/${id}`,
+    ORGANIZATIONS: (id: string) => `users/${id}/organizations`,
+    ADD_TO_ORG: (id: string) => `users/${id}/organizations`,
+    REMOVE_FROM_ORG: (userId: string, orgId: string) => `users/${userId}/organizations/${orgId}`,
+  },
+  
+  // Organization endpoints
+  ORGANIZATIONS: {
+    LIST: 'organizations',
+    GET: (id: string) => `organizations/${id}`,
+    CREATE: 'organizations',
+    UPDATE: (id: string) => `organizations/${id}`,
+    DELETE: (id: string) => `organizations/${id}`,
+    STATS: (id: string) => `organizations/${id}/stats`,
+  },
+  
+  // Group endpoints
+  GROUPS: {
+    LIST: 'groups',
+    GET: (id: string) => `groups/${id}`,
+    CREATE: 'groups',
+    UPDATE: (id: string) => `groups/${id}`,
+    DELETE: (id: string) => `groups/${id}`,
+    MEMBERS: (id: string) => `groups/${id}/members`,
+    ADD_MEMBER: (id: string) => `groups/${id}/members`,
+    REMOVE_MEMBER: (groupId: string, userId: string) => `groups/${groupId}/members/${userId}`,
+  },
+  
+  // Document endpoints
+  DOCUMENTS: {
+    LIST: 'documents',
+    GET: (id: string) => `documents/${id}`,
+    UPLOAD: 'documents/upload',
+    UPDATE: (id: string) => `documents/${id}`,
+    DELETE: (id: string) => `documents/${id}`,
+    CHUNKS: (id: string) => `documents/${id}/chunks`,
+    VERSIONS: (id: string) => `documents/${id}/versions`,
+  },
+  
+  // Search endpoints
+  SEARCH: {
+    SEARCH: 'search',
+    HISTORY: 'search/history',
+    SUGGESTIONS: 'search/suggestions',
+    CLEAR_HISTORY: 'search/history',
   },
 } as const;
 

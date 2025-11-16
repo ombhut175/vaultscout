@@ -1,7 +1,7 @@
-// hooks/useTesting.ts - FOLLOWS HACKATHON RULES
+import { useEffect } from 'react'
 import useSWR from 'swr'
-import { API_ENDPOINTS } from '@/constants/api' // 🚨 MUST USE constants
-import { swrFetcher } from '@/helpers/request' // 🚨 MUST USE helpers/request fetcher
+import { API_ENDPOINTS } from '@/constants/api'
+import { swrFetcher } from '@/helpers/request'
 import { useTestingStore } from '@/lib/store'
 import hackLog from '@/lib/logger'
 
@@ -17,40 +17,45 @@ export function useTesting() {
   
   // SWR for testing data - FOLLOWS RULES (explicitly uses swrFetcher from helpers/request)
   const { data, error, isLoading, mutate } = useSWR(
-    API_ENDPOINTS.TESTING.DATA, // 🚨 Uses constants
-    swrFetcher, // 🚨 EXPLICITLY use fetcher from helpers/request
+    API_ENDPOINTS.TESTING.DATA,
+    swrFetcher,
     {
-      refreshInterval: 0, // Don't auto-refresh for hackathon demo
+      refreshInterval: 0,
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
-      onSuccess: (data) => {
-        hackLog.info('Testing data loaded successfully', { 
-          dataType: typeof data,
-          hasStats: data && typeof data === 'object' && 'stats' in data
-        });
-        setTestingData(data)
-        setLastRefresh(new Date())
-        setError(null)
-        
-        // Determine system status based on data
-        if (data && typeof data === 'object' && 'stats' in data) {
-          const dataWithStats = data as any;
-          if (dataWithStats.stats?.uptime > 0) {
-            setSystemStatus('healthy')
-          } else {
-            setSystemStatus('warning')
-          }
+      dedupingInterval: 2000,
+    }
+  )
+
+  useEffect(() => {
+    if (data) {
+      hackLog.info('Testing data loaded successfully', { 
+        dataType: typeof data,
+        hasStats: data && typeof data === 'object' && 'stats' in data
+      });
+      setTestingData(data)
+      setLastRefresh(new Date())
+      setError(null)
+      
+      if (data && typeof data === 'object' && 'stats' in data) {
+        const dataWithStats = data as any;
+        if (dataWithStats.stats?.uptime > 0) {
+          setSystemStatus('healthy')
         } else {
           setSystemStatus('warning')
         }
-      },
-      onError: (err) => {
-        hackLog.error('Testing data loading failed', err);
-        // 🚨 FOLLOWS RULES - Uses helpers/errors through store
-        setErrorFromException(err)
+      } else {
+        setSystemStatus('warning')
       }
     }
-  )
+  }, [data, setTestingData, setLastRefresh, setError, setSystemStatus])
+
+  useEffect(() => {
+    if (error) {
+      hackLog.error('Testing data loading failed', error);
+      setErrorFromException(error)
+    }
+  }, [error, setErrorFromException])
 
   const refreshData = async () => {
     try {

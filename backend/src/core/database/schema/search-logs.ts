@@ -31,10 +31,7 @@ export const searchLogs = pgTable(
     matchIds: text("match_ids").array().default([]).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    orgCreatedIdx: index("search_logs_org_created_idx").on(
-      table.orgId,
-      table.createdAt,
-    ),
-  }),
+  (table) => [
+    index("search_logs_org_created_idx").on(table.orgId, table.createdAt),
+  ],
 );

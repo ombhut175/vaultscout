@@ -237,8 +237,7 @@ export class DocumentProcessingService {
       const vectorIds: string[] = [];
       const vectorMetadata: Record<string, unknown>[] = [];
 
-      for (let i = 0; i < chunkRecords.length; i++) {
-        const chunkRecord = chunkRecords[i];
+      for (const chunkRecord of chunkRecords) {
         const vectorId = `chunk_${document.id}_${chunkRecord.position}`;
         vectorIds.push(vectorId);
         vectorMetadata.push({
@@ -423,14 +422,8 @@ export class DocumentProcessingService {
       );
     }
 
-    const fileExtension = file.originalname
-      .split(".")
-      .pop()
-      ?.toLowerCase();
-    if (
-      !fileExtension ||
-      !this.allowedExtensions.includes(fileExtension)
-    ) {
+    const fileExtension = file.originalname.split(".").pop()?.toLowerCase();
+    if (!fileExtension || !this.allowedExtensions.includes(fileExtension)) {
       throw new BadRequestException(
         `Invalid file type. Allowed extensions: ${this.allowedExtensions.join(", ")}`,
       );

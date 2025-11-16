@@ -577,7 +577,7 @@ export class AuthController {
 
       try {
         if (authService.usersRepository) {
-          publicUser = await authService.usersRepository.findById(user.id);
+          publicUser = await authService.usersRepository.findByExternalUserId(user.id);
           isEmailVerified = publicUser?.isEmailVerified || false;
           this.logger.log(
             `User verification status for ${user.email}: ${isEmailVerified}`,

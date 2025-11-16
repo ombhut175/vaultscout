@@ -4,6 +4,7 @@ import {
   ChunkerService,
   DocumentProcessingService,
   TextExtractorService,
+  DocumentsService,
 } from "./services";
 import { SupabaseModule } from "../../core/supabase/supabase.module";
 import { PineconeModule } from "../pinecone/pinecone.module";
@@ -18,8 +19,14 @@ import { AuthGuard } from "../../common";
     ChunkerService,
     DocumentProcessingService,
     TextExtractorService,
+    DocumentsService,
     AuthGuard,
   ],
-  exports: [ChunkerService, DocumentProcessingService, TextExtractorService],
+  exports: [
+    ChunkerService,
+    DocumentProcessingService,
+    TextExtractorService,
+    DocumentsService,
+  ],
 })
 export class DocumentsModule {}

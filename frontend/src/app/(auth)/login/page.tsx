@@ -27,6 +27,12 @@ export default function LoginPage() {
     clearErrors();
   }, [clearErrors]);
 
+  React.useEffect(() => {
+    if (loginError) {
+      toast.error(loginError);
+    }
+  }, [loginError]);
+
   function validate(form: FormData) {
     const email = String(form.get("email") || "").trim();
     const password = String(form.get("password") || "");

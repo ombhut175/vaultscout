@@ -19,7 +19,5 @@ export const groups = pgTable(
     }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    uniqueOrgName: unique().on(table.orgId, table.name),
-  }),
+  (table) => [unique().on(table.orgId, table.name)],
 );

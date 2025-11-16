@@ -13,10 +13,7 @@ import {
   EmbeddingsRepository,
 } from "../../../core/database/repositories";
 import { SupabaseStorageService } from "../../../core/supabase/supabase-storage.service";
-import {
-  ENV,
-  SUPABASE_BUCKETS,
-} from "../../../common/constants/string-const";
+import { ENV, SUPABASE_BUCKETS } from "../../../common/constants/string-const";
 
 export interface DocumentProcessingJobData {
   documentId: string;
@@ -34,11 +31,11 @@ export interface DocumentProcessingJobData {
 }
 
 @Processor("document-processing", {
-  concurrency: 5,
-  stalledInterval: 180000,
-  maxStalledCount: 2,
-  lockDuration: 300000,
-  lockRenewTime: 90000,
+  concurrency: 1,
+  stalledInterval: 300000,
+  maxStalledCount: 3,
+  lockDuration: 600000,
+  lockRenewTime: 150000,
 })
 export class DocumentProcessingProcessor extends WorkerHost {
   private readonly logger = new Logger(DocumentProcessingProcessor.name);
@@ -213,8 +210,7 @@ export class DocumentProcessingProcessor extends WorkerHost {
       const vectorIds: string[] = [];
       const vectorMetadata: Record<string, unknown>[] = [];
 
-      for (let i = 0; i < chunkRecords.length; i++) {
-        const chunkRecord = chunkRecords[i];
+      for (const chunkRecord of chunkRecords) {
         const vectorId = `chunk_${data.documentId}_${chunkRecord.position}`;
         vectorIds.push(vectorId);
         vectorMetadata.push({

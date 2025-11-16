@@ -1,16 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
-import { DrizzleService } from "../drizzle.service";
 import { files } from "../schema/files";
 import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 @Injectable()
 export class FilesRepository extends BaseRepository<typeof files.$inferSelect> {
-  constructor(drizzleService: DrizzleService) {
-    super(drizzleService);
-  }
-
   async create(data: typeof files.$inferInsert) {
     this.logger.log("Creating file record", {
       operation: "create",

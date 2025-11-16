@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
-import { DrizzleService } from "../drizzle.service";
 import { documentVersions } from "../schema/document-versions";
 import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
@@ -9,10 +8,6 @@ import { MESSAGES } from "../../../common/constants/string-const";
 export class DocumentVersionsRepository extends BaseRepository<
   typeof documentVersions.$inferSelect
 > {
-  constructor(drizzleService: DrizzleService) {
-    super(drizzleService);
-  }
-
   async create(data: typeof documentVersions.$inferInsert) {
     this.logger.log("Creating document version", {
       operation: "create",

@@ -34,16 +34,12 @@ export const embeddings = pgTable(
     dim: integer("dim").notNull(),
     embedTs: timestamp("embed_ts").defaultNow().notNull(),
   },
-  (table) => ({
-    uniqueVectorId: unique().on(
-      table.indexName,
-      table.namespace,
-      table.vectorId,
-    ),
-    orgIndexNamespaceIdx: index("embeddings_org_index_namespace_idx").on(
+  (table) => [
+    unique().on(table.indexName, table.namespace, table.vectorId),
+    index("embeddings_org_index_namespace_idx").on(
       table.orgId,
       table.indexName,
       table.namespace,
     ),
-  }),
+  ],
 );

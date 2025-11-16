@@ -4,23 +4,34 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { ROUTES, NAV_ITEMS } from "@/constants/routes";
+import { ROUTES, NAV_ITEMS, ADMIN_NAV_ITEMS } from "@/constants/routes";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuthStore } from "@/hooks/use-auth-store";
+import { useUser } from "@/hooks/useUser";
 import { Button } from "./ui/button";
-import { GraduationCap, LogOut } from "lucide-react";
+import { GraduationCap, LogOut, Shield } from "lucide-react";
 import hackLog from "@/lib/logger";
 
 export function AppNavigation() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  
+  // Get user details with organizations to check admin role
+  const { user: userDetails } = useUser(user?.id || null);
+  
+  // Check if user is admin in any organization
+  const isAdmin = React.useMemo(() => {
+    if (!userDetails?.organizations) return false;
+    return userDetails.organizations.some(org => org.role === 'admin');
+  }, [userDetails]);
 
   React.useEffect(() => {
     hackLog.componentMount('AppNavigation', {
       currentPath: pathname,
       isAuthenticated: !!user,
+      isAdmin,
     });
-  }, [pathname, user]);
+  }, [pathname, user, isAdmin]);
 
   const handleLogout = async () => {
     hackLog.authLogout(user?.id);
@@ -50,7 +61,7 @@ export function AppNavigation() {
               href={item.href as any}
               className={cn(
                 "transition-colors hover:text-foreground/80",
-                pathname === item.href ? "text-foreground" : "text-foreground/60"
+                pathname === item.href ? "text-foreground font-semibold" : "text-foreground/60"
               )}
               onClick={() => {
                 if (pathname !== item.href) {
@@ -58,6 +69,26 @@ export function AppNavigation() {
                 }
               }}
             >
+              {item.title}
+            </Link>
+          ))}
+          
+          {/* Admin-only navigation items */}
+          {isAdmin && ADMIN_NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href as any}
+              className={cn(
+                "transition-colors hover:text-foreground/80 flex items-center gap-1",
+                pathname === item.href ? "text-foreground font-semibold" : "text-foreground/60"
+              )}
+              onClick={() => {
+                if (pathname !== item.href) {
+                  hackLog.routeChange(pathname, item.href);
+                }
+              }}
+            >
+              {item.title === 'Admin Dashboard' && <Shield className="h-3 w-3" />}
               {item.title}
             </Link>
           ))}

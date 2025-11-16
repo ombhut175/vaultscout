@@ -39,12 +39,12 @@ export const ingestJobs = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => ({
-    lookupIdx: index("ingest_jobs_lookup_idx").on(
+  (table) => [
+    index("ingest_jobs_lookup_idx").on(
       table.orgId,
       table.documentId,
       table.stage,
       table.status,
     ),
-  }),
+  ],
 );

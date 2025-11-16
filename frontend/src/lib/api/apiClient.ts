@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { API_URL_PREFIX } from "@/constants/string-const";
 import hackLog from "@/lib/logger";
 
@@ -36,11 +36,41 @@ function createBaseURL(): string {
   return fullUrl;
 }
 
+// Retry configuration
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+const RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504]; // Retry on these status codes
+
+// Track retry count for each request
+interface RetryConfig extends AxiosRequestConfig {
+  __retryCount?: number;
+}
+
+// Helper to check if error is retryable
+function isRetryableError(error: AxiosError): boolean {
+  // Network errors (no response)
+  if (!error.response) {
+    return true;
+  }
+  
+  // Specific status codes
+  if (error.response.status && RETRY_STATUS_CODES.includes(error.response.status)) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Helper to delay execution
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Create the axios instance 
 export const apiClient = axios.create({
   baseURL: createBaseURL(),
   withCredentials: true,
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // 30 second timeout (increased for document uploads)
 });
 
 // Add request interceptor for debugging
@@ -77,7 +107,7 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Add response interceptor for logging while preserving original error shape
+// Add response interceptor for logging and retry logic
 apiClient.interceptors.response.use(
   (response) => {
     console.log("API Response:", {
@@ -87,8 +117,10 @@ apiClient.interceptors.response.use(
     });
     return response;
   },
-  (error: any) => {
-    // Log and pass through so downstream interceptors/handlers can decide
+  async (error: AxiosError) => {
+    const config = error.config as RetryConfig;
+    
+    // Log error details
     if (error.response) {
       console.error("API Error Response:", error.response.status, error.response.data);
     } else if (error.request) {
@@ -96,6 +128,37 @@ apiClient.interceptors.response.use(
     } else {
       console.error("API Error Setup:", error.message);
     }
+    
+    // Check if we should retry
+    if (config && isRetryableError(error)) {
+      config.__retryCount = config.__retryCount || 0;
+      
+      if (config.__retryCount < MAX_RETRIES) {
+        config.__retryCount += 1;
+        
+        const retryDelay = RETRY_DELAY * config.__retryCount; // Exponential backoff
+        
+        hackLog.warn(`Retrying request (attempt ${config.__retryCount}/${MAX_RETRIES})`, {
+          url: config.url,
+          method: config.method,
+          delay: retryDelay,
+          error: error.message
+        });
+        
+        // Wait before retrying
+        await delay(retryDelay);
+        
+        // Retry the request
+        return apiClient(config);
+      } else {
+        hackLog.error('Max retries reached', {
+          url: config.url,
+          method: config.method,
+          retries: config.__retryCount
+        });
+      }
+    }
+    
     return Promise.reject(error);
   }
 );

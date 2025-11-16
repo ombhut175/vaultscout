@@ -20,9 +20,12 @@ export const SUCCESS_MESSAGES = {
 export const ERROR_MESSAGES = {
   // Network/API errors
   NETWORK_ERROR: '🌐 Network error occurred. Please check your connection.',
+  OFFLINE_ERROR: '📡 You appear to be offline. Please check your internet connection.',
   API_ERROR: '🔌 API connection failed. Please try again.',
   SERVER_ERROR: '🖥️ Server error occurred. Please try again later.',
   TIMEOUT_ERROR: '⏰ Request timed out. Please try again.',
+  RETRY_FAILED: '🔄 Request failed after multiple retries. Please try again later.',
+  CONNECTION_REFUSED: '🚫 Connection refused. The server may be down.',
   
   // Data/Loading errors
   DATA_LOAD_FAILED: '📊 Failed to load data. Please refresh and try again.',

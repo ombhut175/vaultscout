@@ -1,7 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
 import { users } from "../schema/users";
-import { eq } from "drizzle-orm";
+import { userOrganizations } from "../schema/user-organizations";
+import { userGroups } from "../schema/user-groups";
+import { organizations } from "../schema/organizations";
+import { groups } from "../schema/groups";
+import { eq, and, desc, count } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 export interface CreateUserDto {
@@ -19,6 +23,23 @@ export interface UserEntity {
   externalUserId: string;
   email: string | null;
   createdAt: Date;
+}
+
+export interface UserWithOrganizations extends UserEntity {
+  organizations: {
+    id: string;
+    name: string;
+    role: "admin" | "editor" | "viewer";
+    joinedAt: Date;
+  }[];
+}
+
+export interface UserWithGroups extends UserEntity {
+  groups: {
+    id: string;
+    name: string;
+    orgId: string;
+  }[];
 }
 
 @Injectable()
@@ -198,6 +219,347 @@ export class UsersRepository extends BaseRepository<UserEntity> {
   async getUsersCount(): Promise<number> {
     this.logger.log("Counting total users");
     return this.count(users);
+  }
+
+  //#endregion
+
+  //#region ==================== ORGANIZATION OPERATIONS ====================
+
+  /**
+   * Find users by organization with role filtering
+   */
+  async findByOrganization(
+    orgId: string,
+    role?: "admin" | "editor" | "viewer",
+    page = 1,
+    limit = 20,
+  ): Promise<{ users: UserEntity[]; total: number }> {
+    this.logger.log(
+      `Finding users for organization: ${orgId}${role ? ` with role: ${role}` : ""}`,
+    );
+
+    try {
+      const offset = (page - 1) * limit;
+
+      // Build where condition
+      const whereConditions = [eq(userOrganizations.orgId, orgId)];
+      if (role) {
+        whereConditions.push(eq(userOrganizations.role, role));
+      }
+
+      // Get users with pagination
+      const usersList = await this.db
+        .select({
+          id: users.id,
+          externalUserId: users.externalUserId,
+          email: users.email,
+          createdAt: users.createdAt,
+          role: userOrganizations.role,
+          joinedAt: userOrganizations.createdAt,
+        })
+        .from(users)
+        .innerJoin(userOrganizations, eq(users.id, userOrganizations.userId))
+        .where(and(...whereConditions))
+        .orderBy(desc(userOrganizations.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const totalResult = await this.db
+        .select({ count: count() })
+        .from(users)
+        .innerJoin(userOrganizations, eq(users.id, userOrganizations.userId))
+        .where(and(...whereConditions));
+
+      const total = totalResult[0]?.count || 0;
+
+      this.logger.log(
+        `Found ${usersList.length} users (total: ${total}) for organization: ${orgId}`,
+      );
+
+      return {
+        users: usersList.map((u) => ({
+          id: u.id,
+          externalUserId: u.externalUserId,
+          email: u.email,
+          createdAt: u.createdAt,
+        })),
+        total,
+      };
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to find users for organization: ${orgId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find user with all their organizations and roles
+   */
+  async findWithOrganizations(
+    userId: string,
+  ): Promise<UserWithOrganizations | null> {
+    this.logger.log(`Finding user with organizations: ${userId}`);
+
+    try {
+      // Get user
+      const user = await this.findById(userId);
+      if (!user) {
+        this.logger.log(`User not found: ${userId}`);
+        return null;
+      }
+
+      // Get user's organizations
+      const userOrgs = await this.db
+        .select({
+          id: organizations.id,
+          name: organizations.name,
+          role: userOrganizations.role,
+          joinedAt: userOrganizations.createdAt,
+        })
+        .from(organizations)
+        .innerJoin(
+          userOrganizations,
+          eq(organizations.id, userOrganizations.orgId),
+        )
+        .where(eq(userOrganizations.userId, userId))
+        .orderBy(desc(userOrganizations.createdAt));
+
+      this.logger.log(
+        `Found user with ${userOrgs.length} organizations: ${userId}`,
+      );
+
+      return {
+        ...user,
+        organizations: userOrgs,
+      };
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to find user with organizations: ${userId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Add user to organization with role
+   */
+  async addToOrganization(
+    userId: string,
+    orgId: string,
+    role: "admin" | "editor" | "viewer",
+  ): Promise<void> {
+    this.logger.log(
+      `Adding user ${userId} to organization ${orgId} with role: ${role}`,
+    );
+
+    try {
+      await this.db.insert(userOrganizations).values({
+        userId,
+        orgId,
+        role,
+      });
+
+      this.logger.log(
+        `User ${userId} added to organization ${orgId} successfully`,
+      );
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to add user ${userId} to organization ${orgId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Remove user from organization
+   */
+  async removeFromOrganization(userId: string, orgId: string): Promise<void> {
+    this.logger.log(`Removing user ${userId} from organization ${orgId}`);
+
+    try {
+      await this.db
+        .delete(userOrganizations)
+        .where(
+          and(
+            eq(userOrganizations.userId, userId),
+            eq(userOrganizations.orgId, orgId),
+          ),
+        );
+
+      this.logger.log(
+        `User ${userId} removed from organization ${orgId} successfully`,
+      );
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to remove user ${userId} from organization ${orgId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update user's role in organization
+   */
+  async updateRole(
+    userId: string,
+    orgId: string,
+    role: "admin" | "editor" | "viewer",
+  ): Promise<void> {
+    this.logger.log(
+      `Updating role for user ${userId} in organization ${orgId} to: ${role}`,
+    );
+
+    try {
+      await this.db
+        .update(userOrganizations)
+        .set({ role })
+        .where(
+          and(
+            eq(userOrganizations.userId, userId),
+            eq(userOrganizations.orgId, orgId),
+          ),
+        );
+
+      this.logger.log(
+        `Role updated successfully for user ${userId} in organization ${orgId}`,
+      );
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to update role for user ${userId} in organization ${orgId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  //#endregion
+
+  //#region ==================== GROUP OPERATIONS ====================
+
+  /**
+   * Add user to group
+   */
+  async addToGroup(userId: string, groupId: string): Promise<void> {
+    this.logger.log(`Adding user ${userId} to group ${groupId}`);
+
+    try {
+      await this.db.insert(userGroups).values({
+        userId,
+        groupId,
+      });
+
+      this.logger.log(`User ${userId} added to group ${groupId} successfully`);
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to add user ${userId} to group ${groupId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Remove user from group
+   */
+  async removeFromGroup(userId: string, groupId: string): Promise<void> {
+    this.logger.log(`Removing user ${userId} from group ${groupId}`);
+
+    try {
+      await this.db
+        .delete(userGroups)
+        .where(
+          and(eq(userGroups.userId, userId), eq(userGroups.groupId, groupId)),
+        );
+
+      this.logger.log(
+        `User ${userId} removed from group ${groupId} successfully`,
+      );
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(
+        `Failed to remove user ${userId} from group ${groupId}`,
+        errorStack,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get all groups for a user
+   */
+  async getUserGroups(userId: string): Promise<UserWithGroups["groups"]> {
+    this.logger.log(`Getting groups for user: ${userId}`);
+
+    try {
+      const userGroupsList = await this.db
+        .select({
+          id: groups.id,
+          name: groups.name,
+          orgId: groups.orgId,
+        })
+        .from(groups)
+        .innerJoin(userGroups, eq(groups.id, userGroups.groupId))
+        .where(eq(userGroups.userId, userId));
+
+      this.logger.log(
+        `Found ${userGroupsList.length} groups for user: ${userId}`,
+      );
+
+      return userGroupsList;
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error(`Failed to get groups for user: ${userId}`, errorStack);
+      throw error;
+    }
+  }
+
+  //#endregion
+
+  //#region ==================== PAGINATION SUPPORT ====================
+
+  /**
+   * Find all users with pagination
+   */
+  async findAll(
+    page = 1,
+    limit = 20,
+  ): Promise<{ users: UserEntity[]; total: number }> {
+    this.logger.log(`Finding all users (page: ${page}, limit: ${limit})`);
+
+    try {
+      const offset = (page - 1) * limit;
+
+      const usersList = await this.db
+        .select()
+        .from(users)
+        .orderBy(desc(users.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const total = await this.db.$count(users);
+
+      this.logger.log(`Found ${usersList.length} users (total: ${total})`);
+
+      return {
+        users: usersList,
+        total,
+      };
+    } catch (error) {
+      const errorStack = error instanceof Error ? error.stack : "";
+      this.logger.error("Failed to find all users", errorStack);
+      throw error;
+    }
   }
 
   //#endregion

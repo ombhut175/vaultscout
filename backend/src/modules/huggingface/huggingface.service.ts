@@ -23,7 +23,7 @@ interface FeatureExtractionResponse {
 export class HuggingfaceService {
   private readonly logger = new Logger(HuggingfaceService.name);
   private client: InferenceClient;
-  private readonly defaultModel = "BAAI/bge-base-en-v1.5";
+  private readonly embeddingModel: string;
   private readonly shouldNormalize: boolean;
   private readonly expectedDimensions?: number;
 
@@ -38,6 +38,9 @@ export class HuggingfaceService {
 
     this.client = new InferenceClient(hfToken);
 
+    this.embeddingModel =
+      process.env[ENV.HF_EMBEDDING_MODEL] || "BAAI/bge-base-en-v1.5";
+
     const bgeNormalizeEnv = process.env[ENV.BGE_NORMALIZE];
     this.shouldNormalize =
       bgeNormalizeEnv === undefined || bgeNormalizeEnv === "true";
@@ -48,7 +51,7 @@ export class HuggingfaceService {
       : undefined;
 
     this.logger.log("HuggingFace service initialized", {
-      model: this.defaultModel,
+      model: this.embeddingModel,
       normalize: this.shouldNormalize,
       expectedDimensions: this.expectedDimensions,
     });
@@ -57,7 +60,7 @@ export class HuggingfaceService {
   async extractFeatures(
     input: FeatureExtractionInput,
   ): Promise<FeatureExtractionResponse> {
-    const model = this.defaultModel;
+    const model = this.embeddingModel;
 
     this.logger.log("Starting feature extraction", {
       operation: "extractFeatures",

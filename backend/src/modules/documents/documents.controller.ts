@@ -1,7 +1,12 @@
 import {
   Controller,
   Post,
+  Get,
+  Put,
+  Delete,
   Body,
+  Param,
+  Query,
   UseInterceptors,
   UploadedFile,
   UseGuards,
@@ -14,16 +19,26 @@ import {
   ApiBody,
   ApiResponse,
   ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
 } from "@nestjs/swagger";
-import { DocumentUploadDto, DocumentUploadResponseDto } from "./dto";
-import { AuthGuard, CurrentUser } from "../../common";
-import { DocumentProcessingService } from "./services/document-processing.service";
+import {
+  DocumentUploadDto,
+  DocumentUploadResponseDto,
+  UpdateDocumentDto,
+  DocumentFiltersDto,
+  DocumentListResponseDto,
+  DocumentResponseDto,
+} from "./dto";
+import { AuthGuard, CurrentUser, successResponse } from "../../common";
+import { DocumentProcessingService, DocumentsService } from "./services";
 
 @ApiTags("Documents")
 @Controller("documents")
 export class DocumentsController {
   constructor(
     private readonly documentProcessingService: DocumentProcessingService,
+    private readonly documentsService: DocumentsService,
   ) {}
 
   @Post("upload")
@@ -74,7 +89,8 @@ export class DocumentsController {
         file: {
           type: "string",
           format: "binary",
-          description: "Document file to upload (extension extracted automatically)",
+          description:
+            "Document file to upload (extension extracted automatically)",
         },
         orgId: {
           type: "string",
@@ -150,5 +166,374 @@ export class DocumentsController {
       file,
       userId,
     );
+  }
+
+  @Get()
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get all documents in organization",
+    description: `
+      Retrieves a paginated list of documents accessible to the authenticated user.
+      
+      **Access Control:**
+      - Only returns documents where the user belongs to at least one ACL group
+      - Filters are applied after ACL check
+      
+      **Filters:**
+      - status: Filter by processing status (queued, processing, ready, failed)
+      - fileType: Filter by file extension (pdf, txt, docx, etc.)
+      - tags: Filter by tags (array)
+      - page: Page number (1-indexed, default: 1)
+      - limit: Items per page (default: 20)
+    `,
+  })
+  @ApiQuery({
+    name: "orgId",
+    required: true,
+    type: String,
+    description: "Organization ID",
+  })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    type: String,
+    description: "Filter by status",
+    enum: ["queued", "processing", "ready", "failed"],
+  })
+  @ApiQuery({
+    name: "fileType",
+    required: false,
+    type: String,
+    description: "Filter by file type",
+  })
+  @ApiQuery({
+    name: "tags",
+    required: false,
+    type: [String],
+    description: "Filter by tags",
+  })
+  @ApiQuery({
+    name: "page",
+    required: false,
+    type: Number,
+    description: "Page number (1-indexed)",
+  })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    type: Number,
+    description: "Items per page",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Documents retrieved successfully",
+    type: DocumentListResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  async findAll(
+    @CurrentUser("id") userId: string,
+    @Query("orgId") orgId: string,
+    @Query() filters: DocumentFiltersDto,
+  ) {
+    const result = await this.documentsService.findAll(orgId, userId, filters);
+    return successResponse(result, "Documents retrieved successfully");
+  }
+
+  @Get(":id")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get document by ID",
+    description: `
+      Retrieves a single document by ID with ACL check.
+      
+      **Access Control:**
+      - Returns 403 if user does not belong to any of the document's ACL groups
+      - Returns 404 if document does not exist
+    `,
+  })
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "Document ID",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document retrieved successfully",
+    type: DocumentResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - user does not have access to this document",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Document not found",
+  })
+  async findOne(@CurrentUser("id") userId: string, @Param("id") id: string) {
+    const document = await this.documentsService.findOne(id, userId);
+    return successResponse(document, "Document retrieved successfully");
+  }
+
+  @Put(":id")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Update document metadata",
+    description: `
+      Updates document metadata (title, tags, ACL groups) with ACL check.
+      
+      **Access Control:**
+      - Returns 403 if user does not belong to any of the document's ACL groups
+      - Returns 404 if document does not exist
+      
+      **Updatable Fields:**
+      - title: Document title
+      - tags: Array of tags
+      - aclGroups: Array of group IDs for access control
+    `,
+  })
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "Document ID",
+  })
+  @ApiBody({
+    type: UpdateDocumentDto,
+    description: "Document update data",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document updated successfully",
+    type: DocumentResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - user does not have access to this document",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Document not found",
+  })
+  async update(
+    @CurrentUser("id") userId: string,
+    @Param("id") id: string,
+    @Body() updateDto: UpdateDocumentDto,
+  ) {
+    const document = await this.documentsService.update(id, userId, updateDto);
+    return successResponse(document, "Document updated successfully");
+  }
+
+  @Delete(":id")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Delete document",
+    description: `
+      Deletes a document with cascade (chunks, embeddings) and Pinecone cleanup.
+      
+      **Access Control:**
+      - Returns 403 if user does not belong to any of the document's ACL groups
+      - Returns 404 if document does not exist
+      
+      **Cascade Deletion:**
+      - Deletes document record from PostgreSQL
+      - Deletes all chunks associated with the document
+      - Deletes all embeddings associated with the chunks
+      - Deletes all vectors from Pinecone
+      
+      **Note:** Pinecone cleanup failures are logged but do not prevent deletion.
+    `,
+  })
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "Document ID",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Document deleted successfully",
+    schema: {
+      type: "object",
+      properties: {
+        success: { type: "boolean", example: true },
+        message: { type: "string", example: "Document deleted successfully" },
+        data: {
+          type: "object",
+          properties: {
+            message: {
+              type: "string",
+              example: "Document deleted successfully",
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - user does not have access to this document",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Document not found",
+  })
+  async delete(@CurrentUser("id") userId: string, @Param("id") id: string) {
+    const result = await this.documentsService.delete(id, userId);
+    return successResponse(result, result.message);
+  }
+
+  @Get(":id/chunks")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get document chunks",
+    description: `
+      Retrieves chunks for a document with pagination and ACL check.
+      
+      **Access Control:**
+      - Returns 403 if user does not belong to any of the document's ACL groups
+      - Returns 404 if document does not exist
+      
+      **Pagination:**
+      - page: Page number (1-indexed, default: 1)
+      - limit: Items per page (default: 20)
+    `,
+  })
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "Document ID",
+  })
+  @ApiQuery({
+    name: "page",
+    required: false,
+    type: Number,
+    description: "Page number (1-indexed)",
+  })
+  @ApiQuery({
+    name: "limit",
+    required: false,
+    type: Number,
+    description: "Items per page",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Chunks retrieved successfully",
+    schema: {
+      type: "object",
+      properties: {
+        success: { type: "boolean", example: true },
+        message: { type: "string", example: "Chunks retrieved successfully" },
+        data: {
+          type: "object",
+          properties: {
+            chunks: {
+              type: "array",
+              items: { $ref: "#/components/schemas/ChunkResponseDto" },
+            },
+            total: { type: "number", example: 100 },
+            page: { type: "number", example: 1 },
+            limit: { type: "number", example: 20 },
+            totalPages: { type: "number", example: 5 },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - user does not have access to this document",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Document not found",
+  })
+  async getChunks(
+    @CurrentUser("id") userId: string,
+    @Param("id") id: string,
+    @Query("page") page?: number,
+    @Query("limit") limit?: number,
+  ) {
+    const result = await this.documentsService.getChunks(
+      id,
+      userId,
+      page,
+      limit,
+    );
+    return successResponse(result, "Chunks retrieved successfully");
+  }
+
+  @Get(":id/versions")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Get document versions",
+    description: `
+      Retrieves all versions for a document with ACL check.
+      
+      **Access Control:**
+      - Returns 403 if user does not belong to any of the document's ACL groups
+      - Returns 404 if document does not exist
+    `,
+  })
+  @ApiParam({
+    name: "id",
+    type: String,
+    description: "Document ID",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Versions retrieved successfully",
+    schema: {
+      type: "object",
+      properties: {
+        success: { type: "boolean", example: true },
+        message: { type: "string", example: "Versions retrieved successfully" },
+        data: {
+          type: "array",
+          items: { $ref: "#/components/schemas/DocumentVersionResponseDto" },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - authentication required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - user does not have access to this document",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "Document not found",
+  })
+  async getVersions(
+    @CurrentUser("id") userId: string,
+    @Param("id") id: string,
+  ) {
+    const versions = await this.documentsService.getVersions(id, userId);
+    return successResponse(versions, "Versions retrieved successfully");
   }
 }

@@ -1,8 +1,11 @@
 // Guards
 export * from "./guards/auth.guard";
+export * from "./guards/role.guard";
+export * from "./guards/acl.guard";
 
 // Decorators
 export * from "./decorators/current-user.decorator";
+export * from "./decorators/roles.decorator";
 
 // Interfaces
 export * from "./interfaces/authenticated-request.interface";

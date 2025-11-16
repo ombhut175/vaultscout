@@ -35,41 +35,49 @@ $ npm install
 
 ### Environment Variables
 
-This project uses environment variables with a priority system for configuration:
+This project uses environment variables with a priority system for configuration.
+
+**📖 Complete Documentation:** See [ENVIRONMENT_VARIABLES.md](../ENVIRONMENT_VARIABLES.md) in the root directory for comprehensive documentation of all environment variables.
 
 **Priority Order:**
 1. **`.env.local`** (highest priority - local development overrides)
 2. **`.env`** (fallback - shared/team configuration)
+3. **`.env.production`** (production deployment)
 
-**Setup Instructions:**
+**Quick Setup:**
 
 ```bash
-# For shared/team configuration (optional fallback)
-cp env.example.txt .env
+# Development
+cp env.example.txt .env.local
+# Edit .env.local with your development values
 
-# For local development overrides (recommended)
-cp env.local.example .env.local
-
-# Edit the files with your actual values
+# Production
+cp .env.production.template .env.production
+# Edit .env.production with your production values
 ```
-
-**Why this priority system?**
-- `.env.local` allows developers to have local overrides without affecting team configuration
-- `.env` serves as a fallback for shared settings
-- `.env.local` is automatically ignored by git (recommended for local development)
 
 **Required Environment Variables:**
 
-- `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_ANON_KEY`: Your Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
-- `NODE_ENV`: Environment (development/production/test)
-- `PORT`: Server port (default: 3000)
+Core services that must be configured:
+- **Supabase:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **Database:** `DATABASE_URL`
+- **Redis:** `REDIS_URL` (for BullMQ job queues)
+- **Hugging Face:** `HF_EMBEDDING_URL`, `HF_EMBEDDING_MODEL`, `HF_API_TOKEN`
+- **Pinecone:** `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`
+- **Application:** `NODE_ENV`, `PORT`, `FRONTEND_URL`, `REDIRECT_TO_FRONTEND_URL`
+- **Embeddings:** `EMBEDDING_DIMENSIONS`, `BGE_NORMALIZE`
 
 **Optional Environment Variables:**
 
-- `SWAGGER_USER`: Username for Swagger documentation access
-- `SWAGGER_PASSWORD`: Password for Swagger documentation access
+- `COOKIE_DOMAIN`: For cross-subdomain cookie support
+- `SWAGGER_ENABLED`, `SWAGGER_USER`, `SWAGGER_PASSWORD`: API documentation access
+- Monitoring and logging variables
+
+**⚠️ Security Notes:**
+- Never commit `.env.local` or `.env.production` to version control
+- Use `.env.production.template` as a reference for production setup
+- Rotate credentials regularly
+- Use different credentials for development and production
 
 ### Supabase Setup
 

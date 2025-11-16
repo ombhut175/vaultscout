@@ -55,6 +55,8 @@ export enum MESSAGES {
   TOKEN_EXPIRED = "Token expired",
   USER_NOT_FOUND = "User not found",
   TASK_NOT_FOUND = "Task not found",
+  ORGANIZATION_NOT_FOUND = "Organization not found",
+  GROUP_NOT_FOUND = "Group not found",
   LOGIN_SUCCESSFUL = "Login successful",
   SIGNUP_SUCCESSFUL = "Account created successfully",
   PASSWORD_RESET_SENT = "Password reset email sent",

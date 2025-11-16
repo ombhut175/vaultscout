@@ -13,6 +13,7 @@ import { successResponse } from "../../common/helpers/api-response.helper";
 import { EmailQueueService } from "./services/email-queue.service";
 import { WorkflowQueueService } from "./services/workflow-queue.service";
 import { QueueMonitoringService } from "./services/queue-monitoring.service";
+import { QueueCleanupService } from "./services/queue-cleanup.service";
 import { EmailJobData } from "./processors/email.processor";
 import { WorkflowJobData } from "./processors/workflow.processor";
 
@@ -25,6 +26,7 @@ export class QueuesController {
     private readonly emailQueueService: EmailQueueService,
     private readonly workflowQueueService: WorkflowQueueService,
     private readonly monitoringService: QueueMonitoringService,
+    private readonly cleanupService: QueueCleanupService,
   ) {}
 
   @Get()
@@ -601,6 +603,168 @@ export class QueuesController {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Failed to retrieve health metrics: ${errorMessage}`);
+      throw error;
+    }
+  }
+
+  @Post("cleanup/purge-all")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Purge all background jobs from all queues",
+    description:
+      "Removes all waiting, active, failed, and delayed jobs from email, workflow, and document-processing queues",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "All queues purged successfully",
+    schema: {
+      type: "object",
+      properties: {
+        statusCode: { type: "number", example: 200 },
+        success: { type: "boolean", example: true },
+        message: { type: "string", example: "All queues purged successfully" },
+        data: {
+          type: "object",
+          properties: {
+            email: { type: "number", example: 5 },
+            workflow: { type: "number", example: 2 },
+            documentProcessing: { type: "number", example: 1 },
+            timestamp: { type: "string" },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Failed to purge queues",
+  })
+  async purgeAllQueues() {
+    this.logger.warn("API call: Purging all queues");
+
+    try {
+      const result = await this.cleanupService.purgeAllQueues();
+
+      return successResponse(
+        {
+          ...result,
+          timestamp: new Date().toISOString(),
+        },
+        "All queues purged successfully",
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(`Failed to purge queues: ${errorMessage}`);
+      throw error;
+    }
+  }
+
+  @Post("cleanup/flush-redis")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Flush entire Redis database",
+    description:
+      "WARNING: This will delete ALL data in Redis, including queues, cache, and sessions",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Redis database flushed successfully",
+    schema: {
+      type: "object",
+      properties: {
+        statusCode: { type: "number", example: 200 },
+        success: { type: "boolean", example: true },
+        message: { type: "string", example: "Redis flushed successfully" },
+        data: {
+          type: "object",
+          properties: {
+            status: { type: "string", example: "Redis database flushed" },
+            timestamp: { type: "string" },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Failed to flush Redis",
+  })
+  async flushRedis() {
+    this.logger.warn("API call: Flushing Redis database");
+
+    try {
+      const result = await this.cleanupService.flushRedis();
+
+      return successResponse(
+        {
+          status: result,
+          timestamp: new Date().toISOString(),
+        },
+        "Redis flushed successfully",
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(`Failed to flush Redis: ${errorMessage}`);
+      throw error;
+    }
+  }
+
+  @Post("cleanup/nuclear")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Complete cleanup - purge all queues AND flush Redis",
+    description:
+      "NUCLEAR OPTION: Removes all jobs and clears entire Redis database. Use with extreme caution!",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Complete cleanup finished",
+    schema: {
+      type: "object",
+      properties: {
+        statusCode: { type: "number", example: 200 },
+        success: { type: "boolean", example: true },
+        message: {
+          type: "string",
+          example: "Complete cleanup finished successfully",
+        },
+        data: {
+          type: "object",
+          properties: {
+            purged: {
+              type: "object",
+              properties: {
+                email: { type: "number", example: 5 },
+                workflow: { type: "number", example: 2 },
+                documentProcessing: { type: "number", example: 1 },
+              },
+            },
+            redis: { type: "string", example: "Redis database flushed" },
+            timestamp: { type: "string" },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: "Failed to complete cleanup",
+  })
+  async nuclearCleanup() {
+    this.logger.error("API call: NUCLEAR CLEANUP - Purging all + Flushing Redis");
+
+    try {
+      const result = await this.cleanupService.cleanupAll();
+
+      this.logger.error(`NUCLEAR CLEANUP COMPLETED: ${JSON.stringify(result)}`);
+
+      return successResponse(result, "Complete cleanup finished successfully");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      this.logger.error(`Failed to complete cleanup: ${errorMessage}`);
       throw error;
     }
   }

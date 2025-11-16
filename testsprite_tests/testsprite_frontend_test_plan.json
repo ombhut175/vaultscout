@@ -1,0 +1,438 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Login Success",
+    "description": "Verify that a user can login successfully with valid credentials via Supabase Auth.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Input valid username/email and password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that login is successful and user is redirected to VaultScout dashboard"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login Failure with Invalid Credentials",
+    "description": "Verify the system rejects invalid login attempts and displays appropriate error messages.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to login page"
+      },
+      {
+        "type": "action",
+        "description": "Input invalid username/email or password"
+      },
+      {
+        "type": "action",
+        "description": "Click login button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login fails and an appropriate error message is shown"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Document Upload - Valid Multi-format Files",
+    "description": "Verify users can upload documents in supported formats (PDF, DOCX, TXT, MD) and receive successful HTTP 200 with document and version IDs.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login and navigate to document upload interface or call upload API"
+      },
+      {
+        "type": "action",
+        "description": "Upload each valid document file type one by one"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify HTTP 200 response with valid document ID and version ID in response"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm file is stored in Supabase storage under deterministic path"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Document Upload - Unsupported File Type Rejection",
+    "description": "Verify system rejects document uploads of unsupported file formats with appropriate error response.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload an unsupported file type (e.g., .exe, .jpg)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the upload API returns an error with status code indicating unsupported file type and meaningful error message"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Text Extraction and Chunking Accuracy",
+    "description": "Verify that after upload, text is accurately extracted, normalized, and chunked into 800-1200 character chunks with small overlap and content hash for idempotency.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Upload a sample document with known content"
+      },
+      {
+        "type": "action",
+        "description": "Monitor document processor job execution"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify extracted text matches expected normalized text"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify text is chunked into multiple segments between 800 and 1200 characters with small overlaps"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each chunk has a unique content hash and re-uploads with same file result in same hashes (idempotency)"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Embedding Vector Generation Dimension Check",
+    "description": "Verify embeddings generated from Hugging Face BGE model conform to 768 dimensions for all valid text chunks.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Upload document and trigger embedding generation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all generated embedding vectors have length equal to 768"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Embedding Batch Size and Stable Latency Validation",
+    "description": "Verify embedding generation and upsert batches execute within acceptable latency without throttling or failure.",
+    "category": "performance",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Upload a large document to create many chunks"
+      },
+      {
+        "type": "action",
+        "description": "Track batch processing times for embedding generation and Pinecone upsert"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no failures or serverless throttling occurs during batch processing"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify batch latency remains stable and within expected performance thresholds"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Pinecone Vector Upsert with Metadata Filtering",
+    "description": "Verify that embedding vectors are upserted correctly into Pinecone vector DB with accurate minimal metadata enabling subsequent filtering.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Finalize embedding generation for test document chunks"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upsert requests include correct vector data and minimal metadata such as organization ID and ACL info"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify vectors are retrievable by queries filtered by those metadata properties"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Semantic Search Endpoint Return Top-K Relevant Results",
+    "description": "Verify semantic vector search endpoint returns top-K relevant snippets for user queries with expected relevance and scores within 400ms P95 latency.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Input natural language queries representing common search scenarios"
+      },
+      {
+        "type": "assertion",
+        "description": "Measure search response time and verify it is under 400ms at P95"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned snippets are relevant and accompanied by accurate relevance scores"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Search Results Metadata Filtering",
+    "description": "Verify that search results respect metadata filters including organization scoping and ACL permissions.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Submit search queries with metadata filters for organization and user ACL roles"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned snippets belong only to permitted organizations and ACLs for the querying user"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Upload API Input Validation and Error Handling",
+    "description": "Verify upload API correctly validates input parameters and returns consistent error codes and messages in error taxonomy for malformed or missing inputs.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Submit upload requests with missing file parameters, invalid metadata, or corrupted files"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error responses conform to expected schema with correct error codes and descriptive messages"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Search API Input Validation and Error Handling",
+    "description": "Ensure search API returns consistent and informative error responses when queries are invalid or improperly formatted.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send search requests with invalid query formats, missing required fields, or unsupported filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify API response includes appropriate error code and message following taxonomy"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Multi-Tenant Organization Management - CRUD Operations",
+    "description": "Verify creation, reading, updating, and deletion of organizations with multi-tenant isolation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create a new organization and verify success"
+      },
+      {
+        "type": "action",
+        "description": "Read organization details and verify correctness"
+      },
+      {
+        "type": "action",
+        "description": "Update organization attributes and verify persistence"
+      },
+      {
+        "type": "action",
+        "description": "Delete the organization and confirm removal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify data isolation between organizations in database and vector indices"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "User and Group Management with ACLs",
+    "description": "Verify user and group CRUD operations, user assignments, role changes, and ACL enforcement for document access control.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Create users and groups, assign users to groups"
+      },
+      {
+        "type": "action",
+        "description": "Change user roles and verify role-based permissions"
+      },
+      {
+        "type": "action",
+        "description": "Assign ACL permissions to documents and verify access restrictions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify users can only access documents according to ACL settings"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Admin Dashboard System Monitoring",
+    "description": "Verify admin dashboard displays real-time system statistics, ingestion status, charts, health checks, and recent activity logs correctly.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as admin and navigate to admin dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ingestion statuses reflect actual ingestion pipeline state"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system statistics and charts update in real time with accurate data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recent activity log entries are shown and correctly timestamped"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Security - Verify Bucket Access Controls",
+    "description": "Verify that upon MVP release, document storage buckets are private and require signed URLs for access, mitigating public access risks.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access storage buckets without signed URL or auth"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is denied"
+      },
+      {
+        "type": "action",
+        "description": "Obtain signed URL and attempt access"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify access is granted only with valid signed URLs"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "API Environment Config Validation",
+    "description": "Verify that the APIs (upload, embedding, search) respect environment configuration settings like batch sizes, endpoints, and throttling parameters.",
+    "category": "configuration",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Deploy application with modified environment configs (e.g., batch size limits)"
+      },
+      {
+        "type": "action",
+        "description": "Trigger upload and search operations"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify batch sizing controls function as configured and no failures occur due to misconfigurations"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Handling Empty or Malformed Documents During Upload",
+    "description": "Verify system handles empty files or corrupted documents gracefully with appropriate error messages.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to upload an empty document or corrupted file"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify upload API returns descriptive error and no partial processing occurs"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Search with No Results Scenario",
+    "description": "Verify that searching for queries that have no matching semantic results returns an empty result set gracefully.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter a rare query expected to have no matches"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the search response indicates zero results without errors"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Concurrent Document Uploads and Search Operations",
+    "description": "Verify system handles multiple concurrent document uploads and search queries, maintaining stability and performance targets.",
+    "category": "performance",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform multiple document uploads in parallel"
+      },
+      {
+        "type": "action",
+        "description": "Simultaneously perform multiple semantic search queries from different users"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no errors occur, response latencies remain within targets, and data integrity is preserved"
+      }
+    ]
+  }
+]

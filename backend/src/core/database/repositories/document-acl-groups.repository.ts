@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
-import { DrizzleService } from "../drizzle.service";
 import { documentAclGroups } from "../schema/document-acl-groups";
 import { eq, and } from "drizzle-orm";
 
@@ -8,10 +7,6 @@ import { eq, and } from "drizzle-orm";
 export class DocumentAclGroupsRepository extends BaseRepository<
   typeof documentAclGroups.$inferSelect
 > {
-  constructor(drizzleService: DrizzleService) {
-    super(drizzleService);
-  }
-
   async addGroupsToDocument(documentId: string, groupIds: string[]) {
     if (groupIds.length === 0) return [];
 

@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
-import { DrizzleService } from "../drizzle.service";
 import { chunks } from "../schema/chunks";
 import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
@@ -9,10 +8,6 @@ import { MESSAGES } from "../../../common/constants/string-const";
 export class ChunksRepository extends BaseRepository<
   typeof chunks.$inferSelect
 > {
-  constructor(drizzleService: DrizzleService) {
-    super(drizzleService);
-  }
-
   async create(data: typeof chunks.$inferInsert) {
     const result = await this.db.insert(chunks).values(data).returning();
     return result[0];
@@ -32,11 +27,30 @@ export class ChunksRepository extends BaseRepository<
     return this.findByIdOrThrow(chunks, id, MESSAGES.NOT_FOUND);
   }
 
-  async findByDocumentId(documentId: string) {
-    return this.db
+  async findByDocumentId(documentId: string, limit?: number, offset?: number) {
+    const query = this.db
       .select()
       .from(chunks)
+      .where(eq(chunks.documentId, documentId))
+      .orderBy(chunks.position);
+
+    if (limit !== undefined) {
+      query.limit(limit);
+    }
+    if (offset !== undefined) {
+      query.offset(offset);
+    }
+
+    return query;
+  }
+
+  async countByDocumentId(documentId: string): Promise<number> {
+    const result = await this.db
+      .select({ count: chunks.id })
+      .from(chunks)
       .where(eq(chunks.documentId, documentId));
+
+    return result.length;
   }
 
   async findByVersionId(versionId: string) {

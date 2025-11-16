@@ -54,11 +54,7 @@ export class TextExtractorService {
 
   private detectTextEncoding(buffer: Buffer): BufferEncoding {
     if (buffer.length >= 3) {
-      if (
-        buffer[0] === 0xef &&
-        buffer[1] === 0xbb &&
-        buffer[2] === 0xbf
-      ) {
+      if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) {
         return "utf8";
       }
     }

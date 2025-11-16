@@ -15,6 +15,18 @@ export const ROUTES = {
     FORGOT_PASSWORD: '/forgot-password',
   },
   
+  // Management routes
+  USERS: '/users',
+  ORGANIZATIONS: '/organizations',
+  GROUPS: '/groups',
+  DOCUMENTS: '/documents',
+  SEARCH: '/search',
+  
+  // Admin routes
+  ADMIN: {
+    DASHBOARD: '/admin/dashboard',
+  },
+  
   // Style guide and docs
   STYLEGUIDE: '/styleguide',
   
@@ -34,19 +46,42 @@ export const NAV_ITEMS = [
     icon: 'home',
   },
   {
-    title: 'Nexlog',
-    href: ROUTES.NEXLOG,
-    icon: 'activity',
+    title: 'Documents',
+    href: ROUTES.DOCUMENTS,
+    icon: 'file',
   },
   {
-    title: 'Testing Dashboard',
-    href: ROUTES.TESTING,
-    icon: 'beaker',
+    title: 'Search',
+    href: ROUTES.SEARCH,
+    icon: 'search',
+  },
+] as const;
+
+// Admin-only navigation items
+export const ADMIN_NAV_ITEMS = [
+  {
+    title: 'Users',
+    href: ROUTES.USERS,
+    icon: 'users',
+    adminOnly: true,
   },
   {
-    title: 'Style Guide',
-    href: ROUTES.STYLEGUIDE,
-    icon: 'palette',
+    title: 'Organizations',
+    href: ROUTES.ORGANIZATIONS,
+    icon: 'building',
+    adminOnly: true,
+  },
+  {
+    title: 'Groups',
+    href: ROUTES.GROUPS,
+    icon: 'users',
+    adminOnly: true,
+  },
+  {
+    title: 'Admin Dashboard',
+    href: ROUTES.ADMIN.DASHBOARD,
+    icon: 'shield',
+    adminOnly: true,
   },
 ] as const;
 

@@ -28,7 +28,14 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:verify": "ts-node scripts/verify-migrations.ts",
+    "db:backup": "bash scripts/backup-database.sh",
+    "db:backup:win": "scripts\\backup-database.bat",
+    "test:build": "bash scripts/test-build.sh",
+    "test:build:win": "scripts\\test-build.bat",
+    "redis:cleanup": "ts-node scripts/cleanup-redis-connections.ts",
+    "redis:monitor": "scripts\\monitor-connections.bat"
   },
   "dependencies": {
     "@bull-board/express": "^5.20.6",

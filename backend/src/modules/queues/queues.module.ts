@@ -10,14 +10,12 @@ import { EmailQueueService } from "./services/email-queue.service";
 import { WorkflowQueueService } from "./services/workflow-queue.service";
 import { DocumentQueueService } from "./services/document-queue.service";
 import { QueueMonitoringService } from "./services/queue-monitoring.service";
+import { QueueCleanupService } from "./services/queue-cleanup.service";
 import { QueuesController } from "./queues.controller";
 import { SupabaseModule } from "../../core/supabase/supabase.module";
 import { PineconeModule } from "../pinecone/pinecone.module";
 import { DatabaseModule } from "../../core/database/database.module";
-import {
-  ChunkerService,
-  TextExtractorService,
-} from "../documents/services";
+import { ChunkerService, TextExtractorService } from "../documents/services";
 
 @Module({
   imports: [
@@ -47,6 +45,7 @@ import {
     WorkflowQueueService,
     DocumentQueueService,
     QueueMonitoringService,
+    QueueCleanupService,
     ChunkerService,
     TextExtractorService,
   ],

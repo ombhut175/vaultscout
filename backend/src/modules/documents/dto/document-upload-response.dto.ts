@@ -29,7 +29,8 @@ export class DocumentUploadResponseDto {
   fileId?: string;
 
   @ApiProperty({
-    description: "Storage path in Supabase bucket (populated after background processing completes)",
+    description:
+      "Storage path in Supabase bucket (populated after background processing completes)",
     example:
       "550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440001/document.pdf",
     required: false,
@@ -37,14 +38,16 @@ export class DocumentUploadResponseDto {
   storagePath?: string;
 
   @ApiProperty({
-    description: "Number of text chunks created (populated after background processing completes)",
+    description:
+      "Number of text chunks created (populated after background processing completes)",
     example: 42,
     required: false,
   })
   chunksCreated?: number;
 
   @ApiProperty({
-    description: "Number of vectors upserted to Pinecone (populated after background processing completes)",
+    description:
+      "Number of vectors upserted to Pinecone (populated after background processing completes)",
     example: 42,
     required: false,
   })

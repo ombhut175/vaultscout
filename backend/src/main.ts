@@ -133,13 +133,16 @@ async function bootstrap() {
       logger.log("Swagger documentation disabled");
     }
 
+    app.enableShutdownHooks();
+    logger.log("Shutdown hooks enabled for graceful cleanup");
+
     const port = process.env[ENV.PORT] || 3000;
     await app.listen(port, "0.0.0.0");
 
-    console.log(`🚀 Application is running on: http://localhost:${port}`);
+    logger.log(`Application is running on: http://localhost:${port}`);
     if (!isProd && swaggerEnabled) {
-      console.log(
-        `📚 Swagger documentation available at: http://localhost:${port}/api/docs`,
+      logger.log(
+        `Swagger documentation available at: http://localhost:${port}/api/docs`,
       );
     }
     logger.log("Bootstrap completed successfully");

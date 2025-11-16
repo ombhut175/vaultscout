@@ -11,8 +11,10 @@ export interface EmailJobData {
 
 @Processor("email", {
   concurrency: 5,
-  stalledInterval: 5000,
-  maxStalledCount: 2,
+  stalledInterval: 30000,
+  maxStalledCount: 3,
+  lockDuration: 60000,
+  lockRenewTime: 15000,
 })
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);

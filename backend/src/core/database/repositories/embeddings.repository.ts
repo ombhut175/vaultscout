@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
-import { DrizzleService } from "../drizzle.service";
 import { embeddings } from "../schema/embeddings";
 import { eq } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
@@ -9,10 +8,6 @@ import { MESSAGES } from "../../../common/constants/string-const";
 export class EmbeddingsRepository extends BaseRepository<
   typeof embeddings.$inferSelect
 > {
-  constructor(drizzleService: DrizzleService) {
-    super(drizzleService);
-  }
-
   async create(data: typeof embeddings.$inferInsert) {
     const result = await this.db.insert(embeddings).values(data).returning();
     return result[0];

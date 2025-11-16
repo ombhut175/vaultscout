@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { User, Mail, Calendar, Shield, Settings, Lock, HelpCircle } from "lucide-react";
+import { User, Mail, Calendar, Shield, Settings, Lock, HelpCircle, FileText, Search, Users, Building2, UsersRound } from "lucide-react";
 import { useAuthUser } from "@/hooks/use-auth-store";
 import { useAuthProtection } from "@/components/auth/auth-provider";
 import { AppNavigation } from "@/components/app-navigation";
+import { useUser } from "@/hooks/useUser";
 import hackLog from "@/lib/logger";
 
 function useInteractiveCard() {
@@ -39,14 +41,24 @@ function useInteractiveCard() {
 export default function DashboardPage() {
   const user = useAuthUser();
   const { shouldRender } = useAuthProtection();
+  
+  // Get user details with organizations to check admin role
+  const { user: userDetails } = useUser(user?.id || null);
+  
+  // Check if user is admin in any organization
+  const isAdmin = React.useMemo(() => {
+    if (!userDetails?.organizations) return false;
+    return userDetails.organizations.some(org => org.role === 'admin');
+  }, [userDetails]);
 
   React.useEffect(() => {
     hackLog.componentMount('DashboardPage', {
       hasUser: !!user,
       userId: user?.id,
-      isEmailVerified: user?.isEmailVerified
+      isEmailVerified: user?.isEmailVerified,
+      isAdmin
     });
-  }, [user]);
+  }, [user, isAdmin]);
 
   if (!shouldRender || !user) {
     return (
@@ -121,6 +133,23 @@ export default function DashboardPage() {
 
           <motion.div variants={itemVariants}>
             <PremiumCard user={user} />
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <div>
+              <h3 className="text-2xl font-semibold tracking-tight mb-6">Quick Links</h3>
+              <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
+                <QuickLinkCard href="/documents" icon={FileText} title="Documents" description="View and manage your documents" />
+                <QuickLinkCard href="/search" icon={Search} title="Search" description="Search across all documents" />
+                {isAdmin && (
+                  <>
+                    <QuickLinkCard href="/users" icon={Users} title="Users" description="Manage users" />
+                    <QuickLinkCard href="/organizations" icon={Building2} title="Organizations" description="Manage organizations" />
+                    <QuickLinkCard href="/groups" icon={UsersRound} title="Groups" description="Manage groups" />
+                  </>
+                )}
+              </div>
+            </div>
           </motion.div>
 
           <motion.div variants={itemVariants}>
@@ -270,6 +299,76 @@ function VerificationItem({ user }: { user: any }) {
         </p>
       </div>
     </motion.div>
+  );
+}
+
+function QuickLinkCard({ 
+  href,
+  icon: Icon, 
+  title, 
+  description 
+}: { 
+  href: string;
+  icon: React.ComponentType<any>; 
+  title: string; 
+  description: string; 
+}) {
+  const { ref, rx, ry, onMouseMove, onMouseLeave } = useInteractiveCard();
+
+  return (
+    <Link href={href as any}>
+      <motion.div
+        ref={ref}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
+        style={{ rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
+        initial={{ opacity: 0, y: 16 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        viewport={{ once: true }}
+        className="group relative will-change-transform cursor-pointer"
+      >
+        {/* Subtle gradient frame */}
+        <div aria-hidden className="pointer-events-none absolute -inset-[1px] rounded-[18px]">
+          <motion.div
+            className="absolute inset-0 rounded-[18px] opacity-20"
+            style={{
+              background:
+                "conic-gradient(from 0deg at 50% 50%, rgba(99,102,241,0.15), rgba(99,102,241,0.08), rgba(99,102,241,0.15))",
+              filter: "blur(10px)",
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+
+        {/* Card */}
+        <div className="relative overflow-hidden rounded-[16px] border border-black/5 bg-white/40 p-6 shadow-lg ring-1 ring-black/5 backdrop-blur-xl transition-all hover:shadow-xl hover:border-primary/20 dark:border-white/10 dark:bg-slate-900/30 dark:ring-white/10">
+          {/* Hover glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-2 rounded-[16px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            style={{
+              background:
+                "radial-gradient(180px 180px at var(--x,50%) var(--y,50%), rgba(99,102,241,0.12), transparent 60%)",
+            }}
+          />
+
+          <div className="relative z-10 space-y-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary transition-all group-hover:bg-primary/25">
+              <Icon className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-base font-semibold tracking-tight">{title}</h4>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{description}</p>
+            </div>
+          </div>
+
+          {/* Bottom accent */}
+          <div className="pointer-events-none absolute inset-x-6 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        </div>
+      </motion.div>
+    </Link>
   );
 }
 

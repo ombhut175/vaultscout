@@ -24,11 +24,8 @@ export const documents = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => ({
-    orgStatusIdx: index("documents_org_status_idx").on(
-      table.orgId,
-      table.status,
-    ),
-    tagsIdx: index("documents_tags_idx").on(table.tags),
-  }),
+  (table) => [
+    index("documents_org_status_idx").on(table.orgId, table.status),
+    index("documents_tags_idx").on(table.tags),
+  ],
 );

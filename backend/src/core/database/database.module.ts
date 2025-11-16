@@ -10,6 +10,7 @@ import { DocumentVersionsRepository } from "./repositories/document-versions.rep
 import { ChunksRepository } from "./repositories/chunks.repository";
 import { FilesRepository } from "./repositories/files.repository";
 import { EmbeddingsRepository } from "./repositories/embeddings.repository";
+import { SearchRepository } from "./repositories/search.repository";
 
 @Module({
   imports: [ConfigModule],
@@ -23,6 +24,7 @@ import { EmbeddingsRepository } from "./repositories/embeddings.repository";
     ChunksRepository,
     FilesRepository,
     EmbeddingsRepository,
+    SearchRepository,
   ],
   exports: [
     DrizzleService,
@@ -34,6 +36,7 @@ import { EmbeddingsRepository } from "./repositories/embeddings.repository";
     ChunksRepository,
     FilesRepository,
     EmbeddingsRepository,
+    SearchRepository,
   ],
 })
 export class DatabaseModule {}

@@ -22,7 +22,5 @@ export const documentVersions = pgTable(
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    uniqueDocVersion: unique().on(table.documentId, table.version),
-  }),
+  (table) => [unique().on(table.documentId, table.version)],
 );

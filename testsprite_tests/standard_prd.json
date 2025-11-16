@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "project": "VaultScout",
+    "date": "2025-11-14",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "VaultScout is an internal knowledge discovery and enterprise search MVP that enables users to upload documents, convert them into embeddings, and perform low-latency semantic search over organization content leveraging managed Hugging Face Inference Endpoints and Pinecone vector database.",
+  "core_goals": [
+    "Enable users to upload documents and retrieve relevant passages within 1-2 steps using semantic search.",
+    "Achieve time to first searchable upload under 2 minutes and P95 search latency under 400 ms.",
+    "Maintain at least 80% task success rate in relevance smoke tests for semantic search functionality."
+  ],
+  "key_features": [
+    "Multi-format document upload (PDF, DOCX, TXT, MD) with storage in Supabase Storage buckets under deterministic paths.",
+    "Text extraction, normalization, and chunking of documents into ~800–1200 character chunks with small overlap and content hash for idempotency.",
+    "Generation of text embeddings using Hugging Face managed Inference Endpoint (BAAI/bge-base-en-v1.5) with 768-dimension vectors.",
+    "Upsert of embeddings in batches to Pinecone serverless index using cosine similarity metric and minimal metadata for filtering.",
+    "Semantic vector search endpoint that embeds user queries, performs top-K searches with metadata filtering, and returns relevant snippets and scores.",
+    "Admin dashboard capabilities for monitoring ingestion status, system statistics, and recent activities.",
+    "Authentication, multi-tenant organization management, user and group management with ACL for secure access control.",
+    "Robust API with upload and search endpoints, error taxonomy, batch-sizing controls, and environment configuration for deployment."
+  ],
+  "user_flow_summary": [
+    "User logs in via Supabase Auth and accesses the VaultScout dashboard.",
+    "User uploads a document via the upload API which stores the file, extracts text, chunks, generates embeddings, and indexes vectors in Pinecone.",
+    "User inputs a natural language query through the search API which embeds the query, queries Pinecone for top-K semantic matches filtered by organization and ACL.",
+    "System returns matched document snippets with relevance scores for user inspection.",
+    "Administrators monitor system health and ingestion statuses through the admin dashboard and validate ingestion/search operations with provided tools."
+  ],
+  "validation_criteria": [
+    "Successful file upload returns HTTP 200 with document and version IDs and stores vectors correctly in Pinecone with associated metadata.",
+    "Search queries consistently return top-K results within the set 400 ms P95 latency target with accurate, relevant snippets.",
+    "Embedding vectors confirm dimension conformity to 768 to avoid mismatches during upsert.",
+    "Batch sizes for embedding and upsert operations allow stable latency without serverless throttling or failure.",
+    "APIs implement input validation and error handling with consistent taxonomy and responses for upload, embedding, and upsert operations.",
+    "Security risks, such as public bucket access, are mitigated with plans for private buckets and signed URLs after MVP release."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "Node.js",
+      "NestJS",
+      "Next.js",
+      "React 19",
+      "PostgreSQL",
+      "Drizzle ORM",
+      "Redis/BullMQ",
+      "Pinecone Vector DB",
+      "HuggingFace Inference API",
+      "Supabase Auth",
+      "Tailwind CSS",
+      "Radix UI",
+      "Zod Validation",
+      "Express",
+      "Jest Testing",
+      "Swagger/OpenAPI"
+    ],
+    "features": [
+      {
+        "name": "Authentication Module",
+        "description": "User registration, login, password reset with Supabase Auth and JWT tokens",
+        "files": [
+          "backend/src/modules/auth/auth.controller.ts",
+          "backend/src/modules/auth/auth.service.ts",
+          "backend/src/modules/auth/auth.module.ts"
+        ]
+      },
+      {
+        "name": "Organizations Management",
+        "description": "Create, read, update, delete organizations with multi-tenant support",
+        "files": [
+          "backend/src/modules/organizations/organizations.controller.ts",
+          "backend/src/modules/organizations/organizations.service.ts",
+          "backend/src/modules/organizations/organizations.module.ts",
+          "frontend/src/app/(other)/organizations/page.tsx",
+          "frontend/src/app/(other)/organizations/[id]/page.tsx"
+        ]
+      },
+      {
+        "name": "Users Management",
+        "description": "User CRUD operations, organization assignment, role management",
+        "files": [
+          "backend/src/modules/users/users.controller.ts",
+          "backend/src/modules/users/users.service.ts",
+          "backend/src/modules/users/users.module.ts",
+          "frontend/src/app/(other)/users/page.tsx",
+          "frontend/src/app/(other)/users/[id]/page.tsx"
+        ]
+      },
+      {
+        "name": "Groups Management",
+        "description": "Create groups, manage group members, ACL for document access control",
+        "files": [
+          "backend/src/modules/groups/groups.controller.ts",
+          "backend/src/modules/groups/groups.service.ts",
+          "backend/src/modules/groups/groups.module.ts",
+          "frontend/src/app/(other)/groups/page.tsx",
+          "frontend/src/app/(other)/groups/[id]/page.tsx",
+          "frontend/src/components/groups/group-member-list.tsx",
+          "frontend/src/components/groups/add-member-form.tsx"
+        ]
+      },
+      {
+        "name": "Document Processing Pipeline",
+        "description": "Upload documents (PDF, DOCX, TXT, MD), extract text, chunk with overlap, generate embeddings",
+        "files": [
+          "backend/src/modules/documents/documents.controller.ts",
+          "backend/src/modules/documents/services/documents.service.ts",
+          "backend/src/modules/documents/documents.module.ts",
+          "backend/src/modules/queues/services/document-processor.service.ts",
+          "frontend/src/app/(other)/documents/page.tsx",
+          "frontend/src/app/(other)/documents/upload/page.tsx",
+          "frontend/src/components/documents/document-upload-form.tsx",
+          "frontend/src/components/documents/document-list.tsx"
+        ]
+      },
+      {
+        "name": "Semantic Vector Search",
+        "description": "Semantic search using Pinecone vectors with ACL filtering, search history tracking",
+        "files": [
+          "backend/src/modules/search/search.controller.ts",
+          "backend/src/modules/search/search.service.ts",
+          "backend/src/modules/search/search.module.ts",
+          "backend/src/core/database/repositories/search.repository.ts",
+          "frontend/src/app/(other)/search/page.tsx",
+          "frontend/src/components/search/search-bar.tsx",
+          "frontend/src/components/search/search-filters.tsx",
+          "frontend/src/components/search/search-results.tsx",
+          "frontend/src/components/search/search-history.tsx"
+        ]
+      },
+      {
+        "name": "Admin Dashboard",
+        "description": "System statistics, charts, health check monitoring, recent activity tracking",
+        "files": [
+          "backend/src/modules/health-check/health-check.controller.ts",
+          "backend/src/modules/health-check/health-check.service.ts",
+          "frontend/src/app/admin/dashboard/page.tsx",
+          "frontend/src/components/admin/stat-card.tsx",
+          "frontend/src/components/admin/chart-component.tsx",
+          "frontend/src/components/admin/system-health.tsx",
+          "frontend/src/components/admin/recent-activity.tsx"
+        ]
+      },
+      {
+        "name": "Database Layer",
+        "description": "Drizzle ORM schema, migrations, repositories for all entities",
+        "files": [
+          "backend/src/core/database/database.module.ts",
+          "backend/src/core/database/database.service.ts",
+          "backend/src/core/database/repositories/chunks.repository.ts",
+          "backend/src/core/database/repositories/search.repository.ts",
+          "backend/drizzle/schema.ts"
+        ]
+      },
+      {
+        "name": "Queue Processing",
+        "description": "BullMQ job queue for async document processing, email delivery, background tasks",
+        "files": [
+          "backend/src/modules/queues/queues.module.ts",
+          "backend/src/modules/queues/services/document-processor.service.ts",
+          "backend/src/modules/queues/services/queue-cleanup.service.ts"
+        ]
+      },
+      {
+        "name": "Embeddings Integration",
+        "description": "HuggingFace BGE model for generating text embeddings",
+        "files": [
+          "backend/src/modules/huggingface/huggingface.service.ts",
+          "backend/src/modules/huggingface/huggingface.module.ts"
+        ]
+      },
+      {
+        "name": "Pinecone Vector DB",
+        "description": "Vector storage and semantic search with namespacing per organization",
+        "files": [
+          "backend/src/modules/pinecone/pinecone.service.ts",
+          "backend/src/modules/pinecone/pinecone.module.ts"
+        ]
+      },
+      {
+        "name": "UI Components Library",
+        "description": "Reusable React components built with Radix UI and Tailwind CSS",
+        "files": [
+          "frontend/src/components/ui/search-input.tsx",
+          "frontend/src/components/ui/success-message.tsx",
+          "frontend/src/components/documents/document-detail.tsx",
+          "frontend/src/components/documents/chunk-viewer.tsx",
+          "frontend/src/components/documents/document-versions.tsx",
+          "frontend/src/components/organizations/organization-card.tsx",
+          "frontend/src/components/organizations/organization-delete-dialog.tsx",
+          "frontend/src/components/users/user-card.tsx",
+          "frontend/src/components/users/user-organizations.tsx",
+          "frontend/src/components/users/user-groups.tsx"
+        ]
+      },
+      {
+        "name": "Global Layout & Navigation",
+        "description": "Main application layout, navigation, role-based UI rendering",
+        "files": [
+          "frontend/src/app/layout.tsx",
+          "frontend/src/components/layout/navigation.tsx",
+          "frontend/src/components/layout/sidebar.tsx"
+        ]
+      }
+    ]
+  }
+}

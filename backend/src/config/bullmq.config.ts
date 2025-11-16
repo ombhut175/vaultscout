@@ -10,6 +10,7 @@ export const bullMQConfig = BullModule.forRoot({
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
     enableOfflineQueue: false,
+    commandTimeout: 300000,
   },
 });
 

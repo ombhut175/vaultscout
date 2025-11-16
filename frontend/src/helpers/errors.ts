@@ -19,6 +19,56 @@ export function extractErrorMessage(error: unknown, fallback?: string): string {
   const defaultFallback = fallback || ERROR_MESSAGES.SOMETHING_WENT_WRONG;
   hackLog.error('Extracting error message', { error, fallback });
 
+  // Check if browser is offline
+  if (typeof window !== 'undefined' && !window.navigator.onLine) {
+    return ERROR_MESSAGES.OFFLINE_ERROR;
+  }
+
+  // Axios errors
+  if (error && typeof error === 'object' && 'isAxiosError' in error) {
+    const axiosError = error as any;
+    
+    // No response (network error, timeout, or CORS)
+    if (!axiosError.response) {
+      if (axiosError.code === 'ECONNABORTED') {
+        return ERROR_MESSAGES.TIMEOUT_ERROR;
+      }
+      if (axiosError.code === 'ERR_NETWORK') {
+        return ERROR_MESSAGES.NETWORK_ERROR;
+      }
+      if (axiosError.code === 'ECONNREFUSED') {
+        return ERROR_MESSAGES.CONNECTION_REFUSED;
+      }
+      if (axiosError.message?.includes('timeout')) {
+        return ERROR_MESSAGES.TIMEOUT_ERROR;
+      }
+      if (axiosError.message?.includes('Network Error')) {
+        return ERROR_MESSAGES.NETWORK_ERROR;
+      }
+      // Check if max retries reached
+      if (axiosError.config?.__retryCount >= 3) {
+        return ERROR_MESSAGES.RETRY_FAILED;
+      }
+      return ERROR_MESSAGES.NETWORK_ERROR;
+    }
+    
+    // Has response - extract backend message
+    if (axiosError.response?.data) {
+      const data = axiosError.response.data;
+      if (typeof data === 'object') {
+        if (data.message) return String(data.message);
+        if (data.error) return String(data.error);
+      }
+      if (typeof data === 'string') return data;
+    }
+    
+    // Status-based messages
+    const status = axiosError.response?.status;
+    if (status >= 500) {
+      return ERROR_MESSAGES.SERVER_ERROR;
+    }
+  }
+
   // Network/Fetch API errors
   if (error instanceof TypeError && error.message.includes('fetch')) {
     return ERROR_MESSAGES.NETWORK_ERROR;

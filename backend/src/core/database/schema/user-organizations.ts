@@ -21,7 +21,5 @@ export const userOrganizations = pgTable(
     role: roleEnum("role").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.userId, table.orgId] }),
-  }),
+  (table) => [primaryKey({ columns: [table.userId, table.orgId] })],
 );

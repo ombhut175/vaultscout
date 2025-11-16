@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import LoggerInit from "@/components/logger-init";
 import { Toaster } from "sonner";
 import hackLog from "@/lib/logger";
@@ -32,15 +33,17 @@ export default function RootLayout({
       <body className={`font-sans antialiased overflow-x-hidden ${GeistSans.variable} ${GeistMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="quodo-theme">
           <AuthProvider>
-            <LoggerInit />
-            {children}
-            <Toaster 
-              richColors 
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-              }}
-            />
+            <ErrorBoundary>
+              <LoggerInit />
+              {children}
+              <Toaster 
+                richColors 
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                }}
+              />
+            </ErrorBoundary>
           </AuthProvider>
         </ThemeProvider>
       </body>

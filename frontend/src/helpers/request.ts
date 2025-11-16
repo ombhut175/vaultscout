@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { HTTP_STATUS, API_MESSAGES } from '@/constants/string-const';
 import { apiClient } from '@/lib/api/apiClient';
 import { extractErrorMessage } from '@/helpers/errors';
+import { handle403Error } from '@/lib/permission-utils';
 import hackLog from '@/lib/logger';
 
 // Response interceptor for global error handling
@@ -19,12 +20,49 @@ apiClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
+    const status = error.response.status
+
+    // Handle validation errors (400) - don't show toast, let form handle it
+    if (status === HTTP_STATUS.BAD_REQUEST) {
+      // Check if it's a validation error with field-specific errors
+      const data = error.response.data
+      if (data && (Array.isArray(data.message) || data.errors)) {
+        // This is a validation error, don't show toast
+        // The form component will handle displaying field-level errors
+        return Promise.reject(error)
+      }
+      // Otherwise, show the error message
+      const backendMessage = extractErrorMessage(error)
+      if (backendMessage) {
+        toast.error(backendMessage)
+      }
+      return Promise.reject(error)
+    }
+
+    // Handle 403 Forbidden errors
+    if (status === HTTP_STATUS.FORBIDDEN) {
+      const backendMessage = extractErrorMessage(error)
+      handle403Error(backendMessage || API_MESSAGES.FORBIDDEN, '/dashboard')
+      return Promise.reject(error)
+    }
+
+    // Handle 401 Unauthorized errors
+    if (status === HTTP_STATUS.UNAUTHORIZED) {
+      toast.error('Session Expired', {
+        description: 'Please log in again to continue'
+      })
+      // Redirect to login after a short delay
+      setTimeout(() => {
+        window.location.href = '/login'
+      }, 1500)
+      return Promise.reject(error)
+    }
+
     // Prefer backend-provided message when available
     const backendMessage = extractErrorMessage(error)
     if (backendMessage) {
       toast.error(backendMessage)
     } else {
-      const status = error.response.status
       if (status >= HTTP_STATUS.INTERNAL_SERVER_ERROR) {
         toast.error(API_MESSAGES.SERVER_ERROR)
       }
@@ -133,9 +171,9 @@ export const apiRequestRaw = {
 export { apiClient };
 
 // 🚨 SWR FETCHER - USE THIS WITH INDIVIDUAL SWR HOOKS
-export const swrFetcher = async (url: string) => {
+export const swrFetcher = async <T = unknown>(url: string): Promise<T> => {
   hackLog.dev('SWR Fetcher called', { url });
-  return apiRequest.get(url, false); // Don't show success toast for GET requests
+  return apiRequest.get<T>(url, false); // Don't show success toast for GET requests
 };
 
 // Types for API responses
