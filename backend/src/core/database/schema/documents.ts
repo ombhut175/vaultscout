@@ -6,12 +6,10 @@ export const documents = pgTable(
   "documents",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organizations.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      })
-      .notNull(),
+    orgId: uuid("org_id").references(() => organizations.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     createdBy: uuid("created_by").references(() => users.id, {
       onDelete: "set null",
       onUpdate: "cascade",

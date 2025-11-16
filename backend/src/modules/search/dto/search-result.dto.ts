@@ -2,6 +2,12 @@ import { ApiProperty } from "@nestjs/swagger";
 
 export class SearchResultDto {
   @ApiProperty({
+    description: "Result ID (same as chunk ID)",
+    example: "550e8400-e29b-41d4-a716-446655440003",
+  })
+  id!: string;
+
+  @ApiProperty({
     description: "Chunk ID",
     example: "550e8400-e29b-41d4-a716-446655440003",
   })

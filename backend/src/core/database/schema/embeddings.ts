@@ -14,12 +14,10 @@ export const embeddings = pgTable(
   "embeddings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organizations.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      })
-      .notNull(),
+    orgId: uuid("org_id").references(() => organizations.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     chunkId: uuid("chunk_id")
       .references(() => chunks.id, {
         onDelete: "cascade",

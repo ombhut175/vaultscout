@@ -112,12 +112,17 @@ export class SearchService {
       });
 
       const index = this.pc.index(this.indexName);
-      const queryResponse = await index.namespace(namespace).query({
+      const queryOptions: any = {
         vector: embeddingResult.embeddings,
         topK,
         includeMetadata: true,
-        filter,
-      });
+      };
+      
+      if (filter) {
+        queryOptions.filter = filter;
+      }
+      
+      const queryResponse = await index.namespace(namespace).query(queryOptions);
 
       const results: SearchResult[] = (queryResponse.matches || []).map(
         (match: any) => ({

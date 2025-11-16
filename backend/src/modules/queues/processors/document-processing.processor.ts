@@ -17,7 +17,7 @@ import { ENV, SUPABASE_BUCKETS } from "../../../common/constants/string-const";
 
 export interface DocumentProcessingJobData {
   documentId: string;
-  orgId: string;
+  orgId?: string;
   userId: string;
   title: string;
   tags: string[];

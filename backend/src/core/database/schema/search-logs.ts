@@ -14,12 +14,10 @@ export const searchLogs = pgTable(
   "search_logs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organizations.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      })
-      .notNull(),
+    orgId: uuid("org_id").references(() => organizations.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     userId: uuid("user_id").references(() => users.id, {
       onDelete: "set null",
       onUpdate: "cascade",

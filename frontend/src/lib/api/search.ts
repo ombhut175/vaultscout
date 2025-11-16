@@ -24,7 +24,7 @@ export interface SearchResult {
   id: string;
   documentId: string;
   documentTitle: string;
-  chunkText: string;
+  text: string;
   score: number;
   page?: number;
   sectionTitle?: string;

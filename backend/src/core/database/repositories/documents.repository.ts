@@ -2,12 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { BaseRepository } from "./base.repository";
 import { documents } from "../schema/documents";
 import { documentAclGroups } from "../schema/document-acl-groups";
-import { userGroups } from "../schema/user-groups";
 import { chunks } from "../schema/chunks";
 import { embeddings } from "../schema/embeddings";
 import { documentVersions } from "../schema/document-versions";
 import { users } from "../schema/users";
-import { eq, and, inArray, desc, count } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 import { MESSAGES } from "../../../common/constants/string-const";
 
 @Injectable()
@@ -152,16 +151,17 @@ export class DocumentsRepository extends BaseRepository<
   }
 
   /**
-   * Find documents accessible to a specific user based on their group memberships
+   * Find documents accessible to a specific user
+   * Simplified for MVP - returns all documents
    * @param userId User ID
-   * @param orgId Organization ID
+   * @param orgId Organization ID (optional)
    * @param page Page number (1-indexed)
    * @param limit Items per page
    * @param filters Optional filters
    */
   async findAccessibleToUser(
     userId: string,
-    orgId: string,
+    orgId?: string | null,
     page = 1,
     limit = 20,
     filters?: {
@@ -181,30 +181,10 @@ export class DocumentsRepository extends BaseRepository<
 
     const offset = (page - 1) * limit;
 
-    // First, get user's group IDs
-    const userGroupIds = await this.db
-      .select({ groupId: userGroups.groupId })
-      .from(userGroups)
-      .where(eq(userGroups.userId, userId));
-
-    const groupIds = userGroupIds.map((ug) => ug.groupId);
-
-    if (groupIds.length === 0) {
-      // User has no groups, return empty result
-      return {
-        documents: [],
-        total: 0,
-        page,
-        limit,
-        totalPages: 0,
-      };
+    const conditions = [];
+    if (orgId) {
+      conditions.push(eq(documents.orgId, orgId));
     }
-
-    // Build where conditions
-    const conditions = [
-      eq(documents.orgId, orgId),
-      inArray(documentAclGroups.groupId, groupIds),
-    ];
     if (filters?.status) {
       conditions.push(eq(documents.status, filters.status));
     }
@@ -212,9 +192,8 @@ export class DocumentsRepository extends BaseRepository<
       conditions.push(eq(documents.fileType, filters.fileType));
     }
 
-    // Query documents with ACL filtering
     const query = this.db
-      .selectDistinct({
+      .select({
         id: documents.id,
         orgId: documents.orgId,
         createdBy: documents.createdBy,
@@ -228,34 +207,25 @@ export class DocumentsRepository extends BaseRepository<
         updatedAt: documents.updatedAt,
       })
       .from(documents)
-      .innerJoin(
-        documentAclGroups,
-        eq(documents.id, documentAclGroups.documentId),
-      )
       .leftJoin(users, eq(documents.createdBy, users.id))
-      .where(and(...conditions))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(documents.createdAt))
       .limit(limit)
       .offset(offset);
 
-    // Get total count
     const countQuery = this.db
-      .selectDistinct({ id: documents.id })
+      .select({ count: count() })
       .from(documents)
-      .innerJoin(
-        documentAclGroups,
-        eq(documents.id, documentAclGroups.documentId),
-      )
-      .where(and(...conditions));
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-    const [docs, countResult] = await Promise.all([query, countQuery]);
+    const [docs, totalResult] = await Promise.all([query, countQuery]);
 
     return {
       documents: docs,
-      total: countResult.length,
+      total: totalResult[0]?.count || 0,
       page,
       limit,
-      totalPages: Math.ceil(countResult.length / limit),
+      totalPages: Math.ceil((totalResult[0]?.count || 0) / limit),
     };
   }
 
@@ -428,7 +398,8 @@ export class DocumentsRepository extends BaseRepository<
   }
 
   /**
-   * Check if user has access to document based on group membership
+   * Check if user has access to document
+   * Simplified for MVP - any authenticated user can access any document
    * @param documentId Document ID
    * @param userId User ID
    */
@@ -439,18 +410,7 @@ export class DocumentsRepository extends BaseRepository<
       userId,
     });
 
-    const result = await this.db
-      .select({ count: count() })
-      .from(documentAclGroups)
-      .innerJoin(userGroups, eq(documentAclGroups.groupId, userGroups.groupId))
-      .where(
-        and(
-          eq(documentAclGroups.documentId, documentId),
-          eq(userGroups.userId, userId),
-        ),
-      );
-
-    return (result[0]?.count || 0) > 0;
+    return true;
   }
 
   //#endregion

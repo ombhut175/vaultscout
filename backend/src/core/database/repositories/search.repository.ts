@@ -8,7 +8,7 @@ import { eq, and, desc, inArray, count } from "drizzle-orm";
 
 export interface SearchLogEntity {
   id: string;
-  orgId: string;
+  orgId: string | null;
   userId: string | null;
   queryText: string;
   filters: Record<string, any>;
@@ -19,7 +19,7 @@ export interface SearchLogEntity {
 }
 
 export interface CreateSearchLogDto {
-  orgId: string;
+  orgId?: string | null;
   userId: string;
   queryText: string;
   filters?: Record<string, any>;
@@ -114,19 +114,19 @@ export class SearchRepository extends BaseRepository<SearchLogEntity> {
    */
   async logSearch(logData: CreateSearchLogDto): Promise<SearchLogEntity> {
     this.logger.log(
-      `Logging search query for user ${logData.userId} in org ${logData.orgId}`,
+      `Logging search query for user ${logData.userId}`,
     );
 
     try {
       const result = await this.db
         .insert(searchLogs)
         .values({
-          orgId: logData.orgId,
+          orgId: logData.orgId ?? null,
           userId: logData.userId,
           queryText: logData.queryText,
           filters: logData.filters || {},
           topk: logData.topk || 10,
-          latencyMs: logData.latencyMs || null,
+          latencyMs: logData.latencyMs ?? 0,
           matchIds: logData.matchIds || [],
         })
         .returning();
@@ -148,22 +148,26 @@ export class SearchRepository extends BaseRepository<SearchLogEntity> {
    */
   async getSearchHistory(
     userId: string,
-    orgId: string,
+    orgId?: string | null,
     page = 1,
     limit = 20,
   ): Promise<{ logs: SearchLogEntity[]; total: number }> {
     this.logger.log(
-      `Getting search history for user ${userId} in org ${orgId} (page: ${page}, limit: ${limit})`,
+      `Getting search history for user ${userId} (page: ${page}, limit: ${limit})`,
     );
 
     try {
       const offset = (page - 1) * limit;
 
-      // Get search logs with pagination
+      const conditions = [eq(searchLogs.userId, userId)];
+      if (orgId) {
+        conditions.push(eq(searchLogs.orgId, orgId));
+      }
+
       const logs = await this.db
         .select()
         .from(searchLogs)
-        .where(and(eq(searchLogs.userId, userId), eq(searchLogs.orgId, orgId)))
+        .where(and(...conditions))
         .orderBy(desc(searchLogs.createdAt))
         .limit(limit)
         .offset(offset);
@@ -171,7 +175,7 @@ export class SearchRepository extends BaseRepository<SearchLogEntity> {
       const [{ count: total }] = await this.db
         .select({ count: count() })
         .from(searchLogs)
-        .where(and(eq(searchLogs.userId, userId), eq(searchLogs.orgId, orgId)));
+        .where(and(...conditions));
 
       this.logger.log(
         `Found ${logs.length} search logs (total: ${total}) for user ${userId}`,
@@ -194,27 +198,32 @@ export class SearchRepository extends BaseRepository<SearchLogEntity> {
   /**
    * Clear all search history for a user in an organization
    */
-  async clearSearchHistory(userId: string, orgId: string): Promise<number> {
+  async clearSearchHistory(userId: string, orgId?: string | null): Promise<number> {
     this.logger.log(
-      `Clearing search history for user ${userId} in org ${orgId}`,
+      `Clearing search history for user ${userId}`,
     );
 
     try {
+      const conditions = [eq(searchLogs.userId, userId)];
+      if (orgId) {
+        conditions.push(eq(searchLogs.orgId, orgId));
+      }
+
       const result = await this.db
         .delete(searchLogs)
-        .where(and(eq(searchLogs.userId, userId), eq(searchLogs.orgId, orgId)))
+        .where(and(...conditions))
         .returning({ id: searchLogs.id });
 
       const deletedCount = result.length;
       this.logger.log(
-        `Cleared ${deletedCount} search logs for user ${userId} in org ${orgId}`,
+        `Cleared ${deletedCount} search logs for user ${userId}`,
       );
 
       return deletedCount;
     } catch (error) {
       const errorStack = error instanceof Error ? error.stack : "";
       this.logger.error(
-        `Failed to clear search history for user ${userId} in org ${orgId}`,
+        `Failed to clear search history for user ${userId}`,
         errorStack,
       );
       throw error;

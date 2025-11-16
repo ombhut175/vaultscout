@@ -25,12 +25,12 @@ export class SupabaseStorageService {
   }
 
   async uploadRaw(
-    orgId: string,
+    orgId: string | undefined,
     documentId: string,
     versionId: string,
     file: Express.Multer.File,
   ): Promise<UploadResult> {
-    const path = `${orgId}/${documentId}/${versionId}/${file.originalname}`;
+    const path = `${orgId || 'uploads'}/${documentId}/${versionId}/${file.originalname}`;
 
     this.logger.log("Uploading file to raw storage", {
       operation: "uploadRaw",
@@ -82,13 +82,13 @@ export class SupabaseStorageService {
   }
 
   async uploadExtracted(
-    orgId: string,
+    orgId: string | undefined,
     documentId: string,
     versionId: string,
     fileName: string,
     content: string,
   ): Promise<UploadResult> {
-    const path = `${orgId}/${documentId}/${versionId}/${fileName}`;
+    const path = `${orgId || 'uploads'}/${documentId}/${versionId}/${fileName}`;
     const buffer = Buffer.from(content, "utf8");
 
     this.logger.log("Uploading extracted text", {

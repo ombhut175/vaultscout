@@ -33,10 +33,11 @@ export class SearchHistoryItemDto {
   latencyMs!: number;
 
   @ApiProperty({
-    description: "Number of matches found",
-    example: 10,
+    description: "IDs of matched chunks",
+    example: ["chunk-id-1", "chunk-id-2"],
+    type: [String],
   })
-  matchCount!: number;
+  matchIds!: string[];
 
   @ApiProperty({
     description: "Search timestamp",

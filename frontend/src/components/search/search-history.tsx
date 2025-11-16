@@ -143,7 +143,7 @@ export function SearchHistory({ className, maxItems = 10 }: SearchHistoryProps) 
                     {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                   </span>
                   <span>•</span>
-                  <span>{item.matchIds.length} results</span>
+                  <span>{item.matchIds?.length ?? 0} results</span>
                   {item.latencyMs && (
                     <>
                       <span>•</span>

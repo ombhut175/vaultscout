@@ -41,20 +41,29 @@ export class DrizzleService implements OnModuleInit, OnModuleDestroy {
   private getPoolConfig(): PoolConfig {
     const databaseUrl = this.configService.get<string>(ENV.DATABASE_URL);
 
+    const baseConfig: PoolConfig = {
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    };
+
     if (databaseUrl) {
-      return { connectionString: databaseUrl };
+      return {
+        ...baseConfig,
+        connectionString: databaseUrl,
+      };
     }
 
-    // Fallback to individual parameters
     return {
+      ...baseConfig,
       host: this.configService.get<string>(ENV.DATABASE_HOST),
       port: this.configService.get<number>(ENV.DATABASE_PORT),
       database: this.configService.get<string>(ENV.DATABASE_NAME),
       user: this.configService.get<string>(ENV.DATABASE_USER),
       password: this.configService.get<string>(ENV.DATABASE_PASSWORD),
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
     };
   }
 

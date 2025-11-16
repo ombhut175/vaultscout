@@ -19,79 +19,25 @@ export class SearchService {
   //#region Semantic Search
 
   /**
-   * Perform semantic search with ACL filtering
-   * @param userId User ID for ACL filtering
+   * Perform semantic search
+   * Simplified for MVP - no ACL filtering
+   * @param userId User ID
    * @param searchQuery Search query parameters
    */
   async semanticSearch(userId: string, searchQuery: SearchQueryDto) {
     const startTime = Date.now();
-    const { query, orgId, topK = 10, fileType, tags } = searchQuery;
+    const { query, topK = 10, fileType, tags } = searchQuery;
 
     this.logger.log("Starting semantic search", {
       operation: "semanticSearch",
       userId,
-      orgId,
       query: query.substring(0, 50),
       topK,
       filters: { fileType, tags },
     });
 
     try {
-      // Step 1: Get user's accessible group IDs
-      const groupIds =
-        await this.searchRepository.getUserAccessibleGroupIds(userId);
-
-      if (groupIds.length === 0) {
-        this.logger.warn("User has no accessible groups", {
-          operation: "semanticSearch",
-          userId,
-          orgId,
-        });
-
-        // Log search with no results
-        await this.logSearch(userId, orgId, query, topK, [], 0, {
-          fileType,
-          tags,
-        });
-
-        return {
-          results: [],
-          total: 0,
-          query,
-          latencyMs: Date.now() - startTime,
-        };
-      }
-
-      // Step 2: Get accessible document IDs
-      const accessibleDocIds =
-        await this.searchRepository.getDocumentsByGroupIds(groupIds, orgId);
-
-      if (accessibleDocIds.length === 0) {
-        this.logger.warn("User has no accessible documents", {
-          operation: "semanticSearch",
-          userId,
-          orgId,
-          groupCount: groupIds.length,
-        });
-
-        // Log search with no results
-        await this.logSearch(userId, orgId, query, topK, [], 0, {
-          fileType,
-          tags,
-        });
-
-        return {
-          results: [],
-          total: 0,
-          query,
-          latencyMs: Date.now() - startTime,
-        };
-      }
-
-      // Step 3: Build Pinecone filter
-      const pineconeFilter: Record<string, any> = {
-        documentId: { $in: accessibleDocIds },
-      };
+      const pineconeFilter: Record<string, any> = {};
 
       if (fileType) {
         pineconeFilter.fileType = fileType;
@@ -103,16 +49,14 @@ export class SearchService {
 
       this.logger.log("Executing Pinecone search", {
         operation: "semanticSearch",
-        accessibleDocCount: accessibleDocIds.length,
         filter: pineconeFilter,
       });
 
-      // Step 4: Perform vector search
       const vectorResults = await this.pineconeSearchService.vectorSearch({
         query,
         topK,
-        filter: pineconeFilter,
-        namespace: orgId, // Use orgId as namespace
+        filter: Object.keys(pineconeFilter).length > 0 ? pineconeFilter : undefined,
+        namespace: "",
       });
 
       this.logger.log("Pinecone search completed", {
@@ -124,8 +68,8 @@ export class SearchService {
       const enrichedResults = await Promise.all(
         vectorResults.map(async (result) => {
           const metadata = result.metadata || {};
-          const chunkId = metadata.chunkId as string;
-          const documentId = metadata.documentId as string;
+          const chunkId = metadata.chunk_id as string;
+          const documentId = metadata.document_id as string;
 
           try {
             // Get chunk details
@@ -136,6 +80,7 @@ export class SearchService {
               await this.documentsRepository.findById(documentId);
 
             return {
+              id: chunkId,
               chunkId,
               documentId,
               documentTitle: document.title,
@@ -168,7 +113,7 @@ export class SearchService {
 
       // Step 6: Log search
       const matchIds = validResults.map((r) => r.chunkId);
-      await this.logSearch(userId, orgId, query, topK, matchIds, latencyMs, {
+      await this.logSearch(userId, null, query, topK, matchIds, latencyMs, {
         fileType,
         tags,
       });
@@ -194,7 +139,6 @@ export class SearchService {
       this.logger.error("Semantic search failed", {
         operation: "semanticSearch",
         userId,
-        orgId,
         query: query.substring(0, 50),
         error: errorMessage,
         stack: errorStack,
@@ -202,7 +146,7 @@ export class SearchService {
       });
 
       // Log failed search
-      await this.logSearch(userId, orgId, query, topK, [], latencyMs, {
+      await this.logSearch(userId, null, query, topK, [], latencyMs, {
         fileType,
         tags,
       });
@@ -218,11 +162,11 @@ export class SearchService {
   /**
    * Get search history for a user
    * @param userId User ID
-   * @param orgId Organization ID
+   * @param orgId Organization ID (optional)
    * @param page Page number
    * @param limit Items per page
    */
-  async getSearchHistory(userId: string, orgId: string, page = 1, limit = 20) {
+  async getSearchHistory(userId: string, orgId?: string | null, page = 1, limit = 20) {
     this.logger.log("Getting search history", {
       operation: "getSearchHistory",
       userId,
@@ -244,7 +188,7 @@ export class SearchService {
       filters: log.filters,
       topk: log.topk,
       latencyMs: log.latencyMs || 0,
-      matchCount: log.matchIds.length,
+      matchIds: log.matchIds || [],
       createdAt: log.createdAt,
     }));
 
@@ -267,10 +211,10 @@ export class SearchService {
   /**
    * Get search suggestions based on user's search history
    * @param userId User ID
-   * @param orgId Organization ID
+   * @param orgId Organization ID (optional)
    * @param limit Number of suggestions
    */
-  async getSearchSuggestions(userId: string, orgId: string, limit = 10) {
+  async getSearchSuggestions(userId: string, orgId?: string | null, limit = 10) {
     this.logger.log("Getting search suggestions", {
       operation: "getSearchSuggestions",
       userId,
@@ -278,12 +222,11 @@ export class SearchService {
       limit,
     });
 
-    // Get recent search history
     const { logs } = await this.searchRepository.getSearchHistory(
       userId,
       orgId,
       1,
-      100, // Get last 100 searches
+      100,
     );
 
     // Group by query text and count occurrences
@@ -334,11 +277,11 @@ export class SearchService {
   //#region Clear Search History
 
   /**
-   * Clear all search history for a user in an organization
+   * Clear all search history for a user
    * @param userId User ID
-   * @param orgId Organization ID
+   * @param orgId Organization ID (optional)
    */
-  async clearSearchHistory(userId: string, orgId: string) {
+  async clearSearchHistory(userId: string, orgId?: string | null) {
     this.logger.log("Clearing search history", {
       operation: "clearSearchHistory",
       userId,
@@ -370,7 +313,7 @@ export class SearchService {
    */
   private async logSearch(
     userId: string,
-    orgId: string,
+    orgId: string | null | undefined,
     queryText: string,
     topk: number,
     matchIds: string[],
@@ -380,7 +323,7 @@ export class SearchService {
     try {
       await this.searchRepository.logSearch({
         userId,
-        orgId,
+        orgId: orgId || null,
         queryText,
         topk,
         matchIds,
@@ -396,7 +339,6 @@ export class SearchService {
         orgId,
         error: errorMessage,
       });
-      // Don't throw - logging failure shouldn't break search
     }
   }
 

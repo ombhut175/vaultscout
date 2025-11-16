@@ -40,7 +40,7 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
   const {
     documentId,
     documentTitle,
-    chunkText,
+    text,
     score,
     page,
     sectionTitle,
@@ -101,7 +101,7 @@ export function SearchResultCard({ result, className }: SearchResultCardProps) {
 
         {/* Snippet */}
         <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-          {truncateText(chunkText)}
+          {truncateText(text)}
         </p>
 
         {/* Metadata */}

@@ -9,12 +9,13 @@ import {
 
 export class DocumentUploadDto {
   @ApiProperty({
-    description: "Organization ID that owns the document",
+    description: "Organization ID that owns the document (optional - uses user's first organization if not provided)",
     example: "550e8400-e29b-41d4-a716-446655440000",
+    required: false,
   })
   @IsUUID()
-  @IsNotEmpty()
-  orgId!: string;
+  @IsOptional()
+  orgId?: string;
 
   @ApiProperty({
     description: "Document title",

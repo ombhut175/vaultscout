@@ -15,12 +15,10 @@ export const chunks = pgTable(
   "chunks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organizations.id, {
-        onDelete: "cascade",
-        onUpdate: "cascade",
-      })
-      .notNull(),
+    orgId: uuid("org_id").references(() => organizations.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     documentId: uuid("document_id")
       .references(() => documents.id, {
         onDelete: "cascade",

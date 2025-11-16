@@ -48,6 +48,19 @@ export interface UploadDocumentRequest {
   groupIds?: string[];
 }
 
+export interface UploadDocumentResponse {
+  documentId: string;
+  jobId?: string;
+  versionId?: string;
+  fileId?: string;
+  storagePath?: string;
+  chunksCreated?: number;
+  vectorsUpserted?: number;
+  status: string;
+  message?: string;
+  timestamp: string;
+}
+
 export interface DocumentsListResponse {
   documents: Document[];
   total: number;
@@ -151,15 +164,28 @@ export class DocumentsAPI {
         data.groupIds.forEach(groupId => formData.append('groupIds', groupId));
       }
       
-      const response = await apiRequest.post<Document>(API_ENDPOINTS.DOCUMENTS.UPLOAD, formData);
+      const response = await apiRequest.post<UploadDocumentResponse>(API_ENDPOINTS.DOCUMENTS.UPLOAD, formData);
       
       hackLog.apiSuccess('POST', API_ENDPOINTS.DOCUMENTS.UPLOAD, {
         title: data.title,
         fileSize: data.file.size,
+        documentId: response.documentId,
+        status: response.status,
         component: 'DocumentsAPI'
       });
 
-      return response;
+      return {
+        id: response.documentId,
+        orgId: '',
+        createdBy: '',
+        title: data.title,
+        fileType: 'pending',
+        tags: data.tags || [],
+        status: response.status,
+        contentHash: '',
+        createdAt: response.timestamp,
+        updatedAt: response.timestamp,
+      };
     } catch (error) {
       hackLog.apiError('POST', API_ENDPOINTS.DOCUMENTS.UPLOAD, {
         error,

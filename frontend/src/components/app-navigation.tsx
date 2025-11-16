@@ -9,7 +9,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { useAuthStore } from "@/hooks/use-auth-store";
 import { useUser } from "@/hooks/useUser";
 import { Button } from "./ui/button";
-import { GraduationCap, LogOut, Shield } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import hackLog from "@/lib/logger";
 
 export function AppNavigation() {
@@ -46,10 +46,10 @@ export function AppNavigation() {
         {/* Logo */}
         <div className="mr-4 flex">
           <Link href={ROUTES.HOME} className="mr-6 flex items-center space-x-2">
-            <span className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-tr from-indigo-500 via-violet-500 to-fuchsia-500 ring-1 ring-border">
-              <GraduationCap className="h-4 w-4 text-white" />
+            <span className="relative grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-tr from-blue-500 via-blue-400 to-cyan-500 ring-1 ring-border">
+              <Shield className="h-4 w-4 text-white" />
             </span>
-            <span className="font-bold">Quodo</span>
+            <span className="font-bold">VaultScout</span>
           </Link>
         </div>
 

@@ -6,7 +6,7 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { User, Mail, Calendar, Shield, Settings, Lock, HelpCircle, FileText, Search, Users, Building2, UsersRound } from "lucide-react";
 import { useAuthUser } from "@/hooks/use-auth-store";
 import { useAuthProtection } from "@/components/auth/auth-provider";
-import { AppNavigation } from "@/components/app-navigation";
+
 import { useUser } from "@/hooks/useUser";
 import hackLog from "@/lib/logger";
 
@@ -92,7 +92,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:from-[#0B1020] dark:to-[#0A0F1D] dark:text-slate-100 overflow-hidden">
+    <div className="relative min-h-full bg-gradient-to-b from-white to-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:from-[#0B1020] dark:to-[#0A0F1D] dark:text-slate-100 overflow-hidden">
       {/* Premium background with grid and gradient blobs */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-gradient-to-br from-primary/15 to-primary/5 blur-3xl" />
@@ -111,9 +111,7 @@ export default function DashboardPage() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      <AppNavigation />
-
-      <main className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -163,7 +161,7 @@ export default function DashboardPage() {
             </div>
           </motion.div>
         </motion.div>
-      </main>
+      </div>
     </div>
   );
 }
